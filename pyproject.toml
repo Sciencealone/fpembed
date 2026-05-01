@@ -4,14 +4,12 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "fpembed"
-version = "0.1.1"
+version = "0.1.3"
 description = "Generalized fingerprint embedding library"
 requires-python = ">=3.9"
 dependencies = [
-    "rdkit==2026.3.1",
-    "numpy==2.2.6",
-    "selfies==1.0.2",
-    "scikit-fingerprints==2.0.0",
+    "scikit-fingerprints>=2.0.0",
+    "selfies>=2.2.0",
 ]
 readme = "README.md"
 license = "MIT"
