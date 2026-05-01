@@ -1,0 +1,19 @@
+# Byte-compiled / optimized / DLL files
+*.pyc
+__pycache__/
+
+# Testing
+.hypothesis/
+.pytest_cache/
+
+# Distribution / packaging
+*.egg-info/
+dist/
+build/
+
+# Application artifacts
+cache.db
+test_cache*.csv
+
+# OS
+.DS_Store

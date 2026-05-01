@@ -1,0 +1,38 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "fpembed"
+version = "0.1.0"
+description = "Generalized fingerprint embedding library backed by scikit-fingerprints"
+requires-python = ">=3.9"
+dependencies = [
+    "rdkit==2026.3.1",
+    "numpy==2.2.6",
+    "selfies==1.0.2",
+    "scikit-fingerprints==2.0.0",
+]
+
+[project.optional-dependencies]
+app = [
+    "nicegui>=3.8.0",
+    "optuna>=3.1.0",
+    "pyyaml>=6.0",
+    "altair>=5.0",
+    "pandas>=1.5.2",
+    "scikit-learn>=1.2.0",
+    "tqdm>=4.64.1",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+fpembed = ["py.typed"]
+
+[tool.pytest.ini_options]
+markers = [
+    "fast: marks tests as fast (< 5 seconds)",
+    "slow: marks tests as slow (property-based, 5-60 seconds)",
+]

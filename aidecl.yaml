@@ -1,0 +1,24 @@
+schema_version: 1.0.0
+project:
+  name: fpembed
+  version: 0.1.0
+  license: MIT
+  content_type: software
+ai_usage:
+  used: true
+  level: significant
+  scope:
+    code_generation: true
+    code_completion: true
+    code_review: true
+    documentation: true
+    testing: true
+    refactoring: true
+  tools:
+    - name: Amazon Kiro
+      type: standalone
+      hosting: cloud
+  summary: Spec-driven AI development with Amazon Kiro was applied for this project.
+declaration:
+  declared_by: Mikhail Markovskii
+  date: '2026-05-01'
