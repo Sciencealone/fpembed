@@ -5,7 +5,7 @@ An interactive web application for optimizing molecular fingerprint embeddings u
 ## Features
 
 - **Dataset selection** — Load RedDB, NFA, or QM9 molecular datasets with filtering and stratified subset sampling
-- **Fingerprint configuration** — Choose from six FP types (ECFP, Atom Pair, Topological Torsion, RDKit, Layered, Pattern) with per-type parameter ranges and size bounds
+- **Fingerprint configuration** — Choose from ten FP types (ECFP, Atom Pair, Topological Torsion, RDKit, Layered, Pattern, Avalon, SECFP, MHFP, MAP4) with per-type parameter ranges and size bounds
 - **Molecular descriptor toggle** — Optionally include 73 RDKit molecular descriptors in the optimization search space. Enabled by default: Optuna decides per-trial whether descriptors improve model performance. Disabling the checkbox excludes descriptors from all trials, using fingerprints only
 - **Random Forest tuning** — Configure hyperparameter search bounds for n_estimators, max_depth, and min_samples_split
 - **Optuna optimization** — Run background optimization with configurable trial count and time limits

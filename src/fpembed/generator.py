@@ -11,10 +11,14 @@ import numpy.typing as npt
 from rdkit import Chem
 from skfp.fingerprints import (
     AtomPairFingerprint,
+    AvalonFingerprint,
     ECFPFingerprint,
     LayeredFingerprint,
+    MAPFingerprint,
+    MHFPFingerprint,
     PatternFingerprint,
     RDKitFingerprint,
+    SECFPFingerprint,
     TopologicalTorsionFingerprint,
 )
 
@@ -22,6 +26,8 @@ from fpembed.compression import (
     compress_fingerprint,
     _is_power_of_two,
     _ALL_METHODS,
+    _BLOCKWISE_METHODS,
+    _VALID_PARAMS,
     _validate_method_params,
     _DEFAULT_SEED,
 )
@@ -42,6 +48,7 @@ _EMPTY_CACHE_INFO = CacheInfo(hits=0, misses=0, maxsize=0, currsize=0)
 
 _SUPPORTED_FP_TYPES = (
     "ecfp", "atom_pair", "topological_torsion", "rdkit", "layered", "pattern",
+    "avalon", "secfp", "mhfp", "map",
 )
 
 
@@ -74,14 +81,33 @@ def _build_skfp(fp_type: str, fp_size: int, fp_params: dict) -> Any:
             fp_size=fp_size, min_path=fp_params.get("min_path", 1),
             max_path=fp_params.get("max_path", 7), n_jobs=1,
         )
+    if fp_type == "avalon":
+        return AvalonFingerprint(fp_size=fp_size, count=False, n_jobs=1)
+    if fp_type == "secfp":
+        return SECFPFingerprint(
+            fp_size=fp_size, radius=fp_params.get("radius", 3),
+            min_radius=fp_params.get("min_radius", 1), n_jobs=1,
+        )
+    if fp_type == "mhfp":
+        return MHFPFingerprint(
+            fp_size=fp_size, radius=fp_params.get("radius", 3),
+            min_radius=fp_params.get("min_radius", 1),
+            variant="bit", n_jobs=1,
+        )
+    if fp_type == "map":
+        return MAPFingerprint(
+            fp_size=fp_size, radius=fp_params.get("radius", 2),
+            variant="binary", n_jobs=1,
+        )
     return PatternFingerprint(fp_size=fp_size, n_jobs=1)
 
 
 class EmbeddedFingerprintGenerator:
     """Unified fingerprint generator backed by scikit-fingerprints.
 
-    Supports six fp_types: ecfp, atom_pair, topological_torsion,
-    rdkit, layered, pattern. Compression via log-space weighted mask.
+    Supports ten fp_types: ecfp, atom_pair, topological_torsion,
+    rdkit, layered, pattern, avalon, secfp, mhfp, map.
+    Compression via log-space weighted mask.
     """
 
     __slots__ = (

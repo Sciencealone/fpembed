@@ -37,6 +37,14 @@ fp_defaults:
     enabled: true
   pattern:
     enabled: true
+  avalon:
+    enabled: true
+  secfp:
+    enabled: true
+  mhfp:
+    enabled: true
+  map:
+    enabled: true
 
 # ============================================================================
 # Compression Method Enabled Defaults
@@ -113,6 +121,13 @@ fp_parameters:
     min_path: [1, 2]
     max_path: [5, 7]
   pattern: {}
+  avalon: {}
+  secfp:
+    radius: [2, 4]
+  mhfp:
+    radius: [2, 4]
+  map:
+    radius: [1, 3]
 
 # ============================================================================
 # Fingerprint Compression Constraints

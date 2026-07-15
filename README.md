@@ -1,6 +1,6 @@
 # FPembed - Generalized Molecular Fingerprint Embeddings
 
-A lightweight Python package for generating compressed molecular fingerprint embeddings, backed by [scikit-fingerprints](https://github.com/scikit-fingerprints/scikit-fingerprints). Supports six binary fingerprint types through a single unified class.
+A lightweight Python package for generating compressed molecular fingerprint embeddings, backed by [scikit-fingerprints](https://github.com/scikit-fingerprints/scikit-fingerprints). Supports ten binary fingerprint types through a single unified class.
 
 FPembed compresses standard molecular fingerprints using weighted binary masking, producing compact float vectors suitable for machine-learning models. The package accepts SMILES, SELFIES, and RDKit Mol objects as input.
 
@@ -33,6 +33,10 @@ Original concept repository: [MMLabCodes/eMFP](https://github.com/MMLabCodes/eMF
 | RDKit | `rdkit` | `min_path` (1), `max_path` (7) |
 | Layered | `layered` | `min_path` (1), `max_path` (7) |
 | Pattern | `pattern` | (none) |
+| Avalon | `avalon` | (none) |
+| SECFP | `secfp` | `radius` (default 3) |
+| MHFP | `mhfp` | `radius` (default 3) |
+| MAP4 | `map` | `radius` (default 2) |
 
 ## Compression Methods
 
@@ -42,12 +46,12 @@ FPembed supports six compression methods, selectable via the `method` parameter 
 
 | Method (`method` value) | Category | `method_params` | Dynamic Range / Distance Preservation | Complexity |
 |-------------------------|----------|-----------------|---------------------------------------|------------|
-| `geometric` | block-wise | `interleave` (bool) | 65,536:1 dynamic range | O(L) |
-| `linear` | block-wise | `interleave` (bool) | S:1 dynamic range | O(L) |
-| `log` | block-wise | `interleave` (bool) | ~4.1:1 dynamic range | O(L) |
-| `uniform` | block-wise | `interleave` (bool) | 1:1 (mean pooling) | O(L) |
+| `geometric` | block-wise | `interleave` (bool) | 65,536:1 dynamic range | O(L)       |
+| `linear` | block-wise | `interleave` (bool) | S:1 dynamic range | O(L)       |
+| `log` | block-wise | `interleave` (bool) | ~4.1:1 dynamic range | O(L)       |
+| `uniform` | block-wise | `interleave` (bool) | 1:1 (mean pooling) | O(L)       |
 | `hadamard` | global | `seed` (int) | orthogonal projection | O(L log L) |
-| `random_projection` | global | `seed` (int) + `sparse` (bool) | JL distance preservation | O(L·D) |
+| `random_projection` | global | `seed` (int) + `sparse` (bool) | JL distance preservation | O(L D)     |
 
 ### The `method` Parameter
 
@@ -108,7 +112,7 @@ print(emb.shape)  # (1, 128)
 
 ### Choosing a Method
 
-Block-wise methods (`geometric`, `linear`, `log`, `uniform`) are fast (O(L)) and simple - use them when speed matters or compression ratios are modest. Among these, `geometric` preserves the most dynamic range while `uniform` treats all bits equally (mean pooling). Global projection methods (`hadamard`, `random_projection`) mix information across all input bits, which helps retain more information at high compression ratios. `hadamard` is efficient (O(L log L)) and requires power-of-2 fingerprint sizes; `random_projection` offers the strongest theoretical distance-preservation guarantees (Johnson-Lindenstrauss lemma) at the cost of O(L·D) complexity.
+Block-wise methods (`geometric`, `linear`, `log`, `uniform`) are fast (O(L)) and simple - use them when speed matters or compression ratios are modest. Among these, `geometric` preserves the most dynamic range while `uniform` treats all bits equally (mean pooling). Global projection methods (`hadamard`, `random_projection`) mix information across all input bits, which helps retain more information at high compression ratios. `hadamard` is efficient (O(L log L)) and requires power-of-2 fingerprint sizes; `random_projection` offers the strongest theoretical distance-preservation guarantees (Johnson-Lindenstrauss lemma) at the cost of O(L D) complexity.
 
 ### Performance Characteristics
 
@@ -117,7 +121,7 @@ All methods produce the same output dimensionality (D = L / compression) but dif
 | Method | Speed                                    | Precomputed Memory                   | Best For |
 |--------|------------------------------------------|--------------------------------------|----------|
 | Block-wise (all four) | Fastest - single vectorized einsum, O(L) | Negligible (C-length weight vector)  | Default choice; large batches |
-| Random projection | Fast - BLAS matmul, O(L·D)               | DxL matrix (~2 MB for L=2048, D=128) | Best theoretical guarantees (JL lemma) |
+| Random projection | Fast - BLAS matmul, O(L D)               | DxL matrix (~2 MB for L=2048, D=128) | Best theoretical guarantees (JL lemma) |
 | Hadamard (SRHT) | Slowest - pure-Python FWHT, O(L log L)   | L-length sign vector (~16 KB)        | Small-scale experiments; future optimization |
 
 Block-wise methods are ~2–5x faster than random projection and orders of magnitude faster than Hadamard in practice. Random projection's memory cost grows quadratically with fingerprint size.

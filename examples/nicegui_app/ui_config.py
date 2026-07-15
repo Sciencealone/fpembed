@@ -28,6 +28,22 @@ _FP_TYPE_LABELS = {
         "label": "Pattern",
         "description": "Pattern Fingerprint (substructure screening, no type-specific params)",
     },
+    "avalon": {
+        "label": "Avalon",
+        "description": "Avalon Fingerprint (atom/bond/ring/path environments, Avalon Toolkit)",
+    },
+    "secfp": {
+        "label": "SECFP",
+        "description": "SMILES Extended Connectivity Fingerprint (MinHash-folded circular SMILES)",
+    },
+    "mhfp": {
+        "label": "MHFP",
+        "description": "MinHashed Fingerprint (circular substructures, MinHash algorithm)",
+    },
+    "map": {
+        "label": "MAP4",
+        "description": "MinHashed Atom Pair fingerprint (atom-pair distances + circular SMILES)",
+    },
 }
 
 

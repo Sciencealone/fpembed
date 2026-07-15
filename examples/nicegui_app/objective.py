@@ -18,7 +18,10 @@ from parameters import filter_compressions_by_granularity
 
 logger = logging.getLogger(__name__)
 
-_FP_TYPES = ["ecfp", "atom_pair", "topological_torsion", "rdkit", "layered", "pattern"]
+_FP_TYPES = [
+    "ecfp", "atom_pair", "topological_torsion", "rdkit", "layered", "pattern",
+    "avalon", "secfp", "mhfp", "map",
+]
 
 
 class UnifiedObjective:
@@ -119,6 +122,15 @@ class UnifiedObjective:
             if "max_path" in ranges:
                 lo, hi = ranges["max_path"]
                 params["max_path"] = trial.suggest_int("layered_max_path", lo, hi)
+        elif fp_type == "secfp" and "radius" in ranges:
+            lo, hi = ranges["radius"]
+            params["radius"] = trial.suggest_int("secfp_radius", lo, hi)
+        elif fp_type == "mhfp" and "radius" in ranges:
+            lo, hi = ranges["radius"]
+            params["radius"] = trial.suggest_int("mhfp_radius", lo, hi)
+        elif fp_type == "map" and "radius" in ranges:
+            lo, hi = ranges["radius"]
+            params["radius"] = trial.suggest_int("map_radius", lo, hi)
         return params
 
     def __call__(self, trial: optuna.Trial) -> float:
