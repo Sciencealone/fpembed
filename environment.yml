@@ -5,7 +5,7 @@ channels:
 dependencies:
   - python==3.12
   - pip
-  - nicegui==3.11.1
+  - nicegui==3.14.0
   - optuna==4.8.0
   - pyyaml==6.0.3
   - altair==5.4.1
