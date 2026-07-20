@@ -370,6 +370,14 @@ The following datasets are included in `examples/datasets/` (obtained from their
 
 This project is licensed under the terms of the MIT open source license. Please refer to the [LICENSE](LICENSE) for the full terms.
 
+## Legal & Trademark Notice
+
+The source code of this project is licensed under the permissive **MIT License**. You are free to use, modify, and distribute the code, even for commercial purposes, as long as the original copyright notice is retained.
+
+However, the name **"FPembed"**, its branding, and identifiers are the intellectual property of the project author (@Sciencealone). 
+* **Commercial Branding:** The unauthorized use of the name "FPembed" to brand, market, or promote commercial software, corporate AI engines, or proprietary services within the fields of bioinformatics, chemoinformatics, and AI drug discovery is strictly prohibited.
+* **Community Protection:** This notice is established to prevent public confusion and to protect the open-source community from misleading corporate misrepresentations. For licensing queries regarding the project name, please open an issue or contact the author directly.
+
 ## AI disclosure
 
 AI usage during project development is declared in [aidecl.yaml](aidecl.yaml) following the [AI Declaration Format](https://ai-declaration.org/).
