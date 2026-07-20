@@ -1,7 +1,7 @@
 # FPembed - Generalized Molecular Fingerprint Embeddings
 
 [![PyPI version](https://badge.fury.io/py/fpembed.svg)](https://badge.fury.io/py/fpembed)
-[![DOI](https://zenodo.org/badge/1223653010.svg)](https://doi.org/10.5281/zenodo.21447996)
+[![DOI](https://img.shields.io/badge/DOI-10.5281/zenodo.21447996-blue)](https://doi.org/10.5281/zenodo.21447996)
 
 
 A lightweight Python package for generating compressed molecular fingerprint embeddings, backed by [scikit-fingerprints](https://github.com/scikit-fingerprints/scikit-fingerprints). Supports ten binary fingerprint types through a single unified class.
