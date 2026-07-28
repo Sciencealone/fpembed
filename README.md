@@ -122,13 +122,13 @@ Block-wise methods (`geometric`, `linear`, `log`, `uniform`) are fast (O(L)) and
 
 All methods produce the same output dimensionality (D = L / compression) but differ in speed and memory:
 
-| Method | Speed                                    | Precomputed Memory                   | Best For |
-|--------|------------------------------------------|--------------------------------------|----------|
-| Block-wise (all four) | Fastest - single vectorized einsum, O(L) | Negligible (C-length weight vector)  | Default choice; large batches |
-| Random projection | Fast - BLAS matmul, O(L D)               | DxL matrix (~2 MB for L=2048, D=128) | Best theoretical guarantees (JL lemma) |
-| Hadamard (SRHT) | Slowest - pure-Python FWHT, O(L log L)   | L-length sign vector (~16 KB)        | Small-scale experiments; future optimization |
+| Method | Speed                                                                              | Precomputed Memory                   | Best For |
+|--------|------------------------------------------------------------------------------------|--------------------------------------|----------|
+| Block-wise (all four) | Fastest - single vectorized einsum, O(L)                                           | Negligible (C-length weight vector)  | Default choice; large batches |
+| Hadamard (SRHT) | Fast - vectorized FWHT (NumPy reshape/broadcast, no Python-level loop), O(L log L) | L-length sign vector (~16 KB)        | Large batches at high compression ratios |
+| Random projection | Fast - BLAS matmul, O(L D)                                                         | DxL matrix (~2 MB for L=2048, D=128) | Best theoretical guarantees (JL lemma) |
 
-Block-wise methods are ~2–5x faster than random projection and orders of magnitude faster than Hadamard in practice. Random projection's memory cost grows quadratically with fingerprint size.
+Block-wise methods remain the fastest choice for large batches. Hadamard's FWHT is vectorized across the whole batch and works much faster now. Random projection's memory cost grows quadratically with fingerprint size.
 
 ## Why Use Embedded Fingerprints?
 
