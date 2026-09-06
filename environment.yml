@@ -3,16 +3,16 @@ channels:
   - anaconda
   - conda-forge
 dependencies:
-  - python==3.12
+  - python=3.12
   - pip
-  - nicegui==3.14.0
-  - optuna==4.8.0
+  - nicegui==3.16.0
+  - optuna==4.9.0
   - pyyaml==6.0.3
   - altair==5.4.1
   - pandas==2.2.3
   - numpy==2.2.6
-  - rdkit==2026.3.1
+  - rdkit==2026.3.5
   - scikit-learn==1.7.2
-  - tqdm==4.67.3
+  - tqdm==4.70.0
   - pip:
     - -e .
