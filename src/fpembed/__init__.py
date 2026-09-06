@@ -20,7 +20,7 @@ from fpembed.compression import compress_fingerprint
 from fpembed.smiles_utils import parse_smiles, canonicalize_smiles
 from fpembed.hashing import fp_params_hash
 
-__version__ = "0.1.7"
+__version__ = "0.1.8"
 
 __all__ = [
     "EmbeddedFingerprintGenerator",
