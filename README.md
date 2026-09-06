@@ -6,6 +6,7 @@
 
 ## Contents
 
+- [Introduction](#introduction)
 - [Installation](#installation)
   - [Conda Environment](#conda-environment)
 - [Quick Start](#quick-start)
@@ -31,6 +32,8 @@
 - [Legal & Trademark Notice](#legal--trademark-notice)
 - [AI disclosure](#ai-disclosure)
 - [Support](#support)
+
+## Introduction
 
 A Python package for generating compressed molecular fingerprint embeddings, backed by [scikit-fingerprints](https://github.com/scikit-fingerprints/scikit-fingerprints). Supports ten binary fingerprint types through a single unified class.
 
