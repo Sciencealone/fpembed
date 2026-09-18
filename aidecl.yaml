@@ -1,7 +1,7 @@
 schema_version: 1.0.0
 project:
   name: fpembed
-  version: 0.1.0
+  version: 0.2.0
   license: MIT
   content_type: software
 ai_usage:

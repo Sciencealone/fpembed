@@ -15,8 +15,16 @@ def fp_params_hash(
 ) -> str:
     """Compute a 16-char SHA-256 prefix of sorted JSON of {fp_type, **fp_params}.
 
-    Bool values in *fp_params* are normalized to Python ``bool`` before
-    serialization to prevent ``True``/``1`` collisions.
+    Bool values in *fp_params* are normalized to integers via ``int(v)`` before
+    serialization, so ``True`` and ``1`` (and ``False`` and ``0``) normalize to
+    the same value and hash identically. This equivalence is intentional.
+
+    ``"fp_type"`` is a reserved key: passing it inside *fp_params* raises
+    ``ValueError``, because it would otherwise overwrite the *fp_type* argument
+    in the payload and collide with a different call.
+
+    When *method* is ``None`` or ``"geometric"`` with no *method_params*,
+    the hash is identical to the original implementation (backward compatible).
 
     Args:
         fp_type: Fingerprint type identifier (e.g. ``"ecfp"``).
@@ -26,7 +34,13 @@ def fp_params_hash(
 
     Returns:
         A 16-character hexadecimal string.
+
+    Raises:
+        ValueError: If *fp_params* contains the reserved key ``"fp_type"``.
     """
+    if "fp_type" in fp_params:
+        raise ValueError("'fp_type' is a reserved key and cannot appear in fp_params")
+
     normalized = {
         k: int(v) if isinstance(v, bool) else v
         for k, v in fp_params.items()

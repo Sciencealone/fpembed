@@ -211,6 +211,15 @@ def render_compression_method_selector(config: dict) -> dict:
         "Strided block partitioning for block-wise methods — "
         "each block samples uniformly across the entire fingerprint"
     )
+    _method_caps = config.get("fp_constraints", {}).get("method_max_compression", {})
+    _geometric_cap = _method_caps.get("geometric")
+    if _geometric_cap is not None:
+        ui.label(
+            f"ℹ Geometric is limited to compression ≤ {_geometric_cap}; "
+            "beyond that the block value no longer fits float64 precision. "
+            "Trials sampling geometric above the limit are pruned and still "
+            "consume budget."
+        ).classes("text-info text-caption")
     compression_warning_label = ui.label(
         "⚠ At least one compression method must be enabled."
     ).classes("text-negative text-caption")

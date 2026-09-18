@@ -17,16 +17,22 @@ Example:
 
 from fpembed.generator import EmbeddedFingerprintGenerator
 from fpembed.compression import compress_fingerprint
-from fpembed.smiles_utils import parse_smiles, canonicalize_smiles
+
+from fpembed.smiles_utils import (
+    parse_smiles,
+    canonicalize_smiles,
+    canonicalize_to_mol,
+)
 from fpembed.hashing import fp_params_hash
 
-__version__ = "0.1.8"
+__version__ = "0.2.0"
 
 __all__ = [
     "EmbeddedFingerprintGenerator",
     "compress_fingerprint",
     "parse_smiles",
     "canonicalize_smiles",
+    "canonicalize_to_mol",
     "fp_params_hash",
     "__version__",
 ]

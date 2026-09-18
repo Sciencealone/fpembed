@@ -21,12 +21,21 @@ from typing import Any
 import numpy as np
 import numpy.typing as npt
 
-from fpembed.compression_blockwise import compress_blockwise
+from fpembed.compression_blockwise import (
+    compress_blockwise,
+    compress_blockwise_exact_uint16,
+)
 from fpembed.compression_projection import (
-    build_rp_matrix,
+    _rp_matrix_T,
     build_srht_signs,
     compress_hadamard,
     compress_random_projection,
+)
+from fpembed.dtype_support import (
+    cast_output,
+    is_binary,
+    normalize_dtype,
+    validate_dtype_for_method,
 )
 
 _BLOCKWISE_METHODS = {"geometric", "linear", "log", "uniform"}
@@ -43,6 +52,27 @@ _VALID_PARAMS: dict[str, set[str]] = {
 }
 
 _DEFAULT_SEED = 42
+
+_GEOMETRIC_MAX_COMPRESSION = 32
+
+
+def _check_geometric_cap(method: str, compression: int) -> None:
+    """Reject geometric compression beyond the float64 mantissa limit.
+
+    Geometric block weights span ``2 ** -compression``; the block integer
+    survives only while it fits the float64 mantissa. Accumulated einsum
+    error overtakes the code spacing well before the naive 53-bit bound,
+    so the largest safe power of two is used as the ceiling. A ``ValueError``
+    is raised rather than a warning because warnings may be suppressed in
+    evaluation runs, which is where silent bit loss does the most damage.
+    """
+    if method == "geometric" and compression > _GEOMETRIC_MAX_COMPRESSION:
+        raise ValueError(
+            f"geometric compression ({compression}) exceeds the maximum "
+            f"of {_GEOMETRIC_MAX_COMPRESSION}: the block integer no longer "
+            f"fits the float64 mantissa, so its low bits are lost. Use a "
+            f"compression <= {_GEOMETRIC_MAX_COMPRESSION}, or a different method."
+        )
 
 
 def _validate_method_params(method: str, method_params: dict) -> None:
@@ -87,8 +117,13 @@ def compress_fingerprint(
     *,
     method: str = "geometric",
     method_params: dict | None = None,
-) -> npt.NDArray[np.float64]:
-    """Compress a binary fingerprint into a dense float embedding.
+    dtype: Any = np.float64,
+) -> npt.NDArray[Any]:
+    """Compress a binary fingerprint into a dense embedding.
+
+    Backward compatible: when ``method="geometric"``, ``method_params=None``,
+    and ``dtype=np.float64`` (all defaults), produces output bit-identical to
+    the previous implementation.
 
     Parameters
     ----------
@@ -100,17 +135,25 @@ def compress_fingerprint(
         Compression method name.
     method_params : dict or None
         Method-specific parameters.
+    dtype : dtype-like
+        Output dtype — ``float64`` (default), ``float32``, or ``uint16``.
+        ``uint16`` is accepted only for ``geometric``/``uniform`` and returns
+        the exact integer block code (see :func:`compress_blockwise_exact_uint16`).
+        The float paths compute internally in ``float64`` and cast on return;
+        ``dtype`` reduces returned size, not peak transient memory.
 
     Returns
     -------
-    ndarray of float64
-        Compressed embedding.
+    ndarray
+        Compressed embedding in the requested *dtype*.
 
     Raises
     ------
     ValueError
-        If *size* is invalid, *method* is unsupported, or *method_params*
-        contains invalid keys/values.
+        If *size* is invalid, *method* is unsupported, *method_params*
+        contains invalid keys/values, *dtype* is unsupported, the
+        method/dtype combination is incompatible, or ``uint16`` is requested
+        for non-binary input.
     """
     if not isinstance(size, int) or size <= 0:
         raise ValueError(
@@ -128,25 +171,74 @@ def compress_fingerprint(
 
     _validate_method_params(method, method_params)
 
-    # Block-wise methods
-    if method in _BLOCKWISE_METHODS:
-        interleave = method_params.get("interleave", False)
-        return compress_blockwise(vector, size, scheme=method, interleave=interleave)
+    vector = np.asarray(vector)
+    if vector.ndim not in (1, 2):
+        raise ValueError(
+            f"Input must be 1-D (L,) or 2-D (N, L); got ndim {vector.ndim}."
+        )
+    if vector.shape[-1] == 0:
+        raise ValueError(
+            "Input feature axis (last axis) must be non-empty; got length 0."
+        )
 
-    # Projection methods
     fp_len = vector.shape[-1] if vector.ndim > 1 else vector.shape[0]
+    if fp_len % size != 0:
+        raise ValueError(
+            f"Input length ({fp_len}) is not evenly divisible by size "
+            f"({size}). Choose a size that divides the fingerprint length."
+        )
+
+    _check_geometric_cap(method, size)
+
+    dt = normalize_dtype(dtype)
+    validate_dtype_for_method(dt, method, size)
+
+    if dt.type is np.uint16:
+        if not is_binary(vector):
+            raise ValueError(
+                "dtype='uint16' requires binary input (every element 0 or 1); "
+                "the exact integer code is undefined for non-binary values."
+            )
+        interleave = method_params.get("interleave", False)
+        return compress_blockwise_exact_uint16(
+            vector, size, scheme=method, interleave=interleave
+        )
+
     output_dim = fp_len // size
 
-    if method == "hadamard":
-        seed = method_params.get("seed", _DEFAULT_SEED)
-        signs = build_srht_signs(fp_len, seed)
-        return compress_hadamard(vector, size, signs)
+    # Zero-row 2-D input is defined as valid: (0, L) -> (0, D). Returned
+    # directly because the per-method transforms cannot reshape an empty
+    # feature buffer. Validation guards above (and the hadamard power-of-two
+    # guard below) still run first.
+    is_empty = vector.ndim == 2 and vector.shape[0] == 0
 
-    # method == "random_projection"
-    seed = method_params.get("seed", _DEFAULT_SEED)
-    sparse = method_params.get("sparse", False)
-    matrix = build_rp_matrix(fp_len, output_dim, seed, sparse)
-    return compress_random_projection(vector, matrix)
+    # Block-wise methods
+    if method in _BLOCKWISE_METHODS:
+        if is_empty:
+            return cast_output(np.empty((0, output_dim), dtype=np.float64), dt)
+        interleave = method_params.get("interleave", False)
+        result = compress_blockwise(vector, size, scheme=method, interleave=interleave)
+    else:
+        # Projection methods
+        if method == "hadamard":
+            if not _is_power_of_two(fp_len) or not _is_power_of_two(output_dim):
+                raise ValueError(
+                    f"hadamard requires L ({fp_len}) and D = L // size "
+                    f"({output_dim}) to be powers of two."
+                )
+            if is_empty:
+                return cast_output(np.empty((0, output_dim), dtype=np.float64), dt)
+            seed = method_params.get("seed", _DEFAULT_SEED)
+            signs = build_srht_signs(fp_len, seed)
+            result = compress_hadamard(vector, size, signs)
+        else:
+            # method == "random_projection"
+            seed = method_params.get("seed", _DEFAULT_SEED)
+            sparse = method_params.get("sparse", False)
+            matrix_t = _rp_matrix_T(fp_len, output_dim, seed, sparse)
+            result = compress_random_projection(vector, matrix_t=matrix_t)
+
+    return cast_output(result, dt)
 
 
 def _is_power_of_two(n: int) -> bool:

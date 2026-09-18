@@ -81,6 +81,9 @@ class UnifiedObjective:
         self.rf_bounds = rf_bounds
         self.min_comp = config["fp_constraints"]["min_compression"]
         self.max_divisor = config["fp_constraints"]["max_compression_divisor"]
+        self.method_max_compression = config["fp_constraints"].get(
+            "method_max_compression", {}
+        )
 
         self.all_compressions = sorted(set().union(*(
             filter_compressions_by_granularity(
@@ -171,6 +174,13 @@ class UnifiedObjective:
                 ):
                     raise optuna.TrialPruned(
                         f"Hadamard requires fp_size to be power of 2, got {fp_size}"
+                    )
+
+                max_comp = self.method_max_compression.get(compression_method)
+                if max_comp is not None and compression > max_comp:
+                    raise optuna.TrialPruned(
+                        f"{compression_method} requires compression <= {max_comp}, "
+                        f"got {compression}"
                     )
             else:
                 compression_method = "none"

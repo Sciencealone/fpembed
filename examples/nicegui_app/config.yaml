@@ -140,6 +140,13 @@ fp_constraints:
   # Maximum compression divisor (max compression = fp_size / max_compression_divisor)
   max_compression_divisor: 2
 
+  # Per-method maximum compression factor. geometric is capped at 32 because above
+  # that the block integer no longer survives the float64 mantissa (see fpembed R06),
+  # silently degrading the embedding. A trial exceeding the cap is pruned.
+  # Methods not listed here have no per-method cap.
+  method_max_compression:
+    geometric: 32
+
 # ============================================================================
 # Stopping Criteria Defaults
 # Controls trial count and time limits for optimization

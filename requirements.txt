@@ -1,5 +1,4 @@
-# Requirements for the NiceGUI example app
-fpembed==0.1.8
+# Requirements for the NiceGUI example app (third-party app lock).
 nicegui==3.16.0
 optuna==4.9.0
 pyyaml==6.0.3
