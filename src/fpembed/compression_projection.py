@@ -1,14 +1,17 @@
-"""Global projection compression methods: SRHT and random projection.
+"""Global projection compression methods: Hadamard and random projection.
 
-Provides the Fast Walsh-Hadamard Transform (FWHT), Subsampled Randomized
-Hadamard Transform (SRHT) compression, and seeded random projection
-(dense Gaussian and sparse Achlioptas variants).
+Provides the Fast Walsh-Hadamard Transform (FWHT), a seeded and fixed-prefix
+truncated Hadamard projection, and seeded random projection (dense Gaussian and
+sparse Achlioptas variants). The Hadamard path applies seeded ±1 sign flips and
+keeps the first D outputs in Sylvester order. The retained coordinates are fixed
+rather than randomly chosen, so it is not conventional randomly subsampled SRHT,
+which additionally draws a random subset of coordinates.
 
 Public API
 ----------
 fwht                        : In-place Fast Walsh-Hadamard Transform.
-build_srht_signs            : Generate random ±1 sign vector for SRHT.
-compress_hadamard           : Compress via SRHT (sign flips → FWHT → truncate).
+build_srht_signs            : Generate the seeded ±1 sign vector for the Hadamard path.
+compress_hadamard           : Compress via sign flips → FWHT → fixed-prefix truncate.
 build_rp_matrix             : Build a random projection matrix (dense or sparse).
 compress_random_projection  : Compress via matrix multiplication or sparse gather.
 """
@@ -91,7 +94,7 @@ def fwht(x: npt.NDArray[np.float64]) -> npt.NDArray[np.float64]:
 def build_srht_signs(
     length: int, seed: int
 ) -> npt.NDArray[np.float64]:
-    """Generate a random ±1 sign vector for SRHT.
+    """Generate the seeded ±1 sign vector for the Hadamard projection.
 
     Memoised on ``(length, seed)``: repeated compression calls with identical
     parameters reuse the same array instead of redrawing it. Determinism per
@@ -128,7 +131,7 @@ def compress_hadamard(
     size: int,
     signs: npt.NDArray[np.float64],
 ) -> npt.NDArray[np.float64]:
-    """Compress using Subsampled Randomized Hadamard Transform.
+    """Compress using a seeded, fixed-prefix truncated Hadamard projection.
 
     Produces the first ``D = L // size`` Walsh-Hadamard outputs directly,
     without computing the discarded ``L - D``. The Sylvester recursion
@@ -137,6 +140,16 @@ def compress_hadamard(
     vector ``log2(size)`` times down to width ``D`` and transforming that
     yields the same leading ``D`` values as transforming the full length and
     truncating.
+
+    The retained coordinates are the first ``D`` in Sylvester order and the
+    sign flips are drawn from ``seed``; no coordinate is randomly subsampled.
+    This differs from conventional SRHT, which additionally selects a random
+    subset of the coordinates. With the retained ``1/√L`` normalization,
+    averaging over the random signs gives an expected squared norm of ``D / L``
+    times the input squared norm, so the transform scales distances rather than
+    preserving them exactly. Bit-identity with the full transform is a
+    correctness property of this transform, not evidence of neighborhood
+    preservation.
 
     The sign flips are fused into the first fold and accumulated in place. The
     two half-length input slices are cast to float64 independently as they are

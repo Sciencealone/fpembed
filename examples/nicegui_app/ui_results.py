@@ -10,6 +10,9 @@ from ui_prediction import (
     create_prediction_chart,
     render_vega_chart,
 )
+from ui_table import (
+    _apply_client_filter, _build_column_defs, _build_initial_filter_state,
+    _get_rows_per_page, _make_filter_template, _prepare_rows)
 
 # 10 distinct colors for up to 10 trials in comparison plots
 _TRIAL_COLORS = [
@@ -18,32 +21,6 @@ _TRIAL_COLORS = [
 ]
 
 _CATEGORICAL_COLS = ["Type", "FP Type", "Descriptors", "Method"]
-_METRIC_WIDTH = "width: 100px"
-_DEFAULT_ROWS_PER_PAGE = 10
-
-
-def _get_rows_per_page(config: dict | None) -> int:
-    """Read rows_per_page from config, falling back to default."""
-    if config is None:
-        return _DEFAULT_ROWS_PER_PAGE
-    rt = config.get("results_table", {})
-    val = rt.get("rows_per_page", _DEFAULT_ROWS_PER_PAGE)
-    return val if isinstance(val, int) and val > 0 else _DEFAULT_ROWS_PER_PAGE
-
-
-def _build_column_defs(display_df) -> list[dict]:
-    """Build column definitions for the NiceGUI table."""
-    columns = []
-    for col in display_df.columns:
-        col_def: dict = {
-            "name": col, "label": col, "field": col,
-            "sortable": True, "align": "left",
-        }
-        if col.endswith("_val"):
-            col_def["style"] = _METRIC_WIDTH
-            col_def["headerStyle"] = _METRIC_WIDTH
-        columns.append(col_def)
-    return columns
 
 
 def _prepare_rows(display_df) -> list[dict]:

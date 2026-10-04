@@ -100,7 +100,7 @@ datasets:
 
 # ============================================================================
 # Fingerprint Parameter Options
-# Defines available sizes and per-FP-type parameter ranges for all six types
+# Defines available sizes and per-FP-type parameter ranges for all ten types
 # ============================================================================
 fp_parameters:
   # Available fingerprint sizes (number of bits)

@@ -37,7 +37,7 @@ from fpembed.hashing import fp_params_hash
 from fpembed.skfp_factory import _build_skfp
 
 if TYPE_CHECKING:
-    from collections.abc import Sequence
+    from collections.abc import Iterable, Iterator, Sequence
 
 CacheInfo = namedtuple("CacheInfo", ["hits", "misses", "maxsize", "currsize"])
 _EMPTY_CACHE_INFO = CacheInfo(hits=0, misses=0, maxsize=0, currsize=0)
@@ -133,6 +133,7 @@ class EmbeddedFingerprintGenerator(_SmilesSelfiesMixin):
                 raise ValueError(
                     f"fp_size ({fp_size}) must be evenly divisible by compression ({effective})"
                 )
+            _check_geometric_cap(method, effective)
 
         if method == "hadamard" and not _is_power_of_two(fp_size):
             raise ValueError("Hadamard method requires fp_size to be a power of 2")
@@ -289,6 +290,23 @@ class EmbeddedFingerprintGenerator(_SmilesSelfiesMixin):
         if valid:
             return np.vstack(valid), invalid
         return np.empty((0, self._out_dim()), dtype=self._dtype), invalid
+
+    def IterFingerprints(
+        self, mols: Iterable[Chem.Mol | None],
+    ) -> Iterator[tuple[int, npt.NDArray[Any] | None]]:
+        """Yield ``(index, embedding_or_none)`` per mol without materialising."""
+        for index, mol in enumerate(mols):
+            yield index, (
+                None if mol is None else self.GetFingerprintAsNumPy(mol)
+            )
+
+    def representation_manifest(self, preprocessing: dict | None = None) -> dict:
+        """Return a fresh JSON-compatible description of the representation.
+
+        ``preprocessing`` is declarative caller metadata, recorded not run.
+        """
+        from fpembed.manifest import build_representation_manifest
+        return build_representation_manifest(self, preprocessing)
 
     def clear_cache(self) -> None:
         """Clear both cache levels. No-op if caching is disabled."""

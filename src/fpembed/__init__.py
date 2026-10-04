@@ -25,7 +25,7 @@ from fpembed.smiles_utils import (
 )
 from fpembed.hashing import fp_params_hash
 
-__version__ = "0.2.0"
+__version__ = "0.2.1"
 
 __all__ = [
     "EmbeddedFingerprintGenerator",

@@ -226,7 +226,11 @@ def render_top10_bar_charts(
     container,
     chart_height: int = 400,
 ) -> None:
-    """Render all three bar charts (R2, MAPE, MSE) into the given container."""
-    for metric in ("R2", "MAPE", "MSE"):
-        chart = create_top10_bar_chart(top10_results, metric, height=chart_height)
-        render_altair_chart(chart, container)
+    """Render all three bar charts (R2, MAPE, MSE) side by side."""
+    with container:
+        with ui.row().classes("w-full q-col-gutter-md"):
+            for metric in ("R2", "MAPE", "MSE"):
+                col = ui.column().classes("col-12 col-md-4")
+                chart = create_top10_bar_chart(
+                    top10_results, metric, height=chart_height)
+                render_altair_chart(chart, col)

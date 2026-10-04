@@ -19,7 +19,7 @@ from fpembed.embedding_cache import _MISS
 from fpembed.smiles_utils import canonicalize_to_mol, parse_smiles
 
 if TYPE_CHECKING:
-    from collections.abc import Sequence
+    from collections.abc import Iterable, Iterator, Sequence
 
 
 class _SmilesSelfiesMixin:
@@ -115,6 +115,16 @@ class _SmilesSelfiesMixin:
             return np.vstack(valid), invalid
         return np.empty((0, self._out_dim()), dtype=self._dtype), invalid
 
+    def IterFingerprintsFromSmiles(
+        self, smiles_list: Iterable[str],
+        validate: bool = True, canonicalize: bool = True,
+    ) -> Iterator[tuple[int, npt.NDArray[Any] | None]]:
+        """Yield ``(index, embedding_or_none)`` per SMILES, lazily."""
+        for index, smiles in enumerate(smiles_list):
+            yield index, self.GetFingerprintFromSmiles(
+                smiles, validate=validate, canonicalize=canonicalize,
+            )
+
     def GetFingerprintFromSelfies(
         self, selfies_str: str, validate: bool = True, canonicalize: bool = True,
     ) -> npt.NDArray[Any] | None:
@@ -148,3 +158,13 @@ class _SmilesSelfiesMixin:
         if valid:
             return np.vstack(valid), invalid
         return np.empty((0, self._out_dim()), dtype=self._dtype), invalid
+
+    def IterFingerprintsFromSelfies(
+        self, selfies_list: Iterable[str],
+        validate: bool = True, canonicalize: bool = True,
+    ) -> Iterator[tuple[int, npt.NDArray[Any] | None]]:
+        """Yield ``(index, embedding_or_none)`` per SELFIES, lazily."""
+        for index, selfies_str in enumerate(selfies_list):
+            yield index, self.GetFingerprintFromSelfies(
+                selfies_str, validate=validate, canonicalize=canonicalize,
+            )

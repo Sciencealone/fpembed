@@ -53,7 +53,7 @@ def render_header() -> None:
     ui.label(
         "Compare Fingerprints (FP) and Embedded Fingerprints (eFP) for molecular"
         " property prediction using Random Forest models. Uses unified Optuna"
-        " optimization across six fingerprint types."
+        " optimization across ten fingerprint types."
     ).classes("text-body1 text-grey-8")
     ui.separator()
 
@@ -99,7 +99,7 @@ def render_fp_type_selector(config: dict) -> dict:
     ui.label("Fingerprint Configuration").classes("text-h6")
     available_sizes = config["fp_parameters"]["sizes"]
     size_options = {s: str(s) for s in available_sizes}
-    with ui.row().classes("gap-4"):
+    with ui.row().classes("gap-4 flex-wrap"):
         min_size_select = ui.select(
             label="FP Size - Lower Bound", options=size_options,
             value=available_sizes[0],
@@ -137,7 +137,7 @@ def render_fp_type_selector(config: dict) -> dict:
         fp_param_inputs[fp_key] = {}
         with exp:
             for param_name, (default_min, default_max) in ranges.items():
-                with ui.row().classes("gap-4 items-center"):
+                with ui.row().classes("gap-4 items-center flex-wrap"):
                     fmt = "%.3f" if isinstance(default_min, float) else None
                     min_input = ui.number(
                         label=f"{param_name} min", value=default_min, format=fmt,
@@ -239,6 +239,7 @@ def render_descriptor_toggle(config: dict) -> dict:
     Returns dict with key 'descriptor_checkbox'.
     """
     default = config.get("descriptors_enabled", True)
+    ui.label("Molecular Descriptors").classes("text-h6")
     descriptor_checkbox = ui.checkbox(
         "Include Molecular Descriptors", value=default
     ).tooltip(
@@ -257,7 +258,7 @@ def render_rf_bounds(config: dict) -> dict:
     ui.label("Random Forest Bounds").classes("text-h6")
     ranges = config["optuna_settings"]["hyperparameter_ranges"]
     ne_range = ranges["n_estimators"]
-    with ui.row().classes("gap-4"):
+    with ui.row().classes("gap-4 flex-wrap"):
         ne_min = ui.number(
             label="n_estimators - Min",
             value=ne_range[0], min=ne_range[0], max=ne_range[1], step=10,
@@ -267,7 +268,7 @@ def render_rf_bounds(config: dict) -> dict:
             value=ne_range[1], min=ne_range[0], max=ne_range[1], step=10,
         ).classes("w-48")
     md_range = ranges["max_depth"]
-    with ui.row().classes("gap-4"):
+    with ui.row().classes("gap-4 flex-wrap"):
         md_min = ui.number(
             label="max_depth - Min",
             value=md_range[0], min=md_range[0], max=md_range[1], step=1,
@@ -285,7 +286,7 @@ def render_rf_bounds(config: dict) -> dict:
         "Include unlimited depth (None)", value=include_none_depth
     ).tooltip("Allow Optuna to try unlimited tree depth")
     mss_range = ranges["min_samples_split"]
-    with ui.row().classes("gap-4"):
+    with ui.row().classes("gap-4 flex-wrap"):
         mss_min = ui.number(
             label="min_samples_split - Min",
             value=mss_range[0], min=mss_range[0], max=mss_range[1],

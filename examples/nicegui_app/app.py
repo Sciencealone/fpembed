@@ -13,26 +13,25 @@ if _app_dir not in sys.path:
 
 from cache_db import SQLiteCacheDB
 from config import load_config
-from dataset import stratified_sample
-from optimization_thread import (
-    get_run_state, is_optimization_running,
-    start_optimization_thread, stop_optimization_thread)
+from dataset import filter_molecules, load_dataset, stratified_sample
+from optimization_thread import (get_run_state, is_optimization_running,
+                                 start_optimization_thread, stop_optimization_thread)
 from ui_charts import render_top10_bar_charts
 from ui_config import (
     render_dataset_section, render_descriptor_toggle, render_fp_type_selector,
     render_header, render_optimization_metric, render_rf_bounds,
     render_split_configuration, render_compression_method_selector)
-from ui_controls import (
-    render_optimization_controls, render_progress_display,
-    render_stopping_criteria, update_progress_labels)
-from ui_results import (
-    render_export_section, render_results_table, render_trial_selector,
-    render_scatter_chart)
+from ui_controls import (render_optimization_controls, render_progress_display,
+                         render_stopping_criteria, update_progress_labels)
+from ui_results import (render_export_section, render_results_table,
+                        render_trial_selector, render_scatter_chart)
+
 from app_helpers import (
     _dataset_cache, _load_and_filter_dataset, _sample_and_count,
-    _update_table_rows, _set_widgets_enabled, _restore_widget_config,
-    _collect_widget_config, _build_default_widget_config, clear_table_ui_state,
-    persist_trial_selector_state, clear_trial_selector_state)
+    _compute_molecule_count, _update_table_rows, _set_widgets_enabled,
+    _restore_widget_config, _collect_widget_config, _build_default_widget_config,
+    clear_table_ui_state, persist_trial_selector_state, clear_trial_selector_state)
+
 from storage_helpers import serialize_results
 from api_endpoints import register_api_endpoints
 from tab_manager import on_client_connect, on_client_disconnect, is_primary
@@ -129,22 +128,25 @@ def main_page():
     table_ref = [None]
     with ui.column().classes("w-full q-pa-sm gap-2"):
         render_header()
+        banner_container = ui.column().classes("w-full")
         with ui.row().classes("w-full items-center gap-2"):
             config_status_label = ui.label("New configuration")
             reset_btn = ui.button("Reset Configuration")
             reset_btn.set_visibility(False)
-        w_ds = render_dataset_section(_config)
-        w_fp = render_fp_type_selector(_config)
-        w_cm = render_compression_method_selector(_config)
-        w_desc = render_descriptor_toggle(_config)
-        w_rf = render_rf_bounds(_config)
-        w_split = render_split_configuration(_config)
-        w_metric = render_optimization_metric(_config)
-        w_stop = render_stopping_criteria(_config)
-        w_ctrl = render_optimization_controls()
-        w_prog = render_progress_display()
+        with ui.row().classes("w-full items-start q-col-gutter-md"):
+            with ui.column().classes("col-12 col-md-6 gap-2"):
+                w_ds = render_dataset_section(_config)
+                w_fp = render_fp_type_selector(_config)
+                w_cm = render_compression_method_selector(_config)
+                w_desc = render_descriptor_toggle(_config)
+            with ui.column().classes("col-12 col-md-6 gap-2"):
+                w_rf = render_rf_bounds(_config)
+                w_split = render_split_configuration(_config)
+                w_metric = render_optimization_metric(_config)
+                w_stop = render_stopping_criteria(_config)
+                w_ctrl = render_optimization_controls()
+                w_prog = render_progress_display()
         results_container = ui.column().classes("w-full")
-        banner_container = ui.column().classes("w-full")
 
     w = {**w_ds, **w_fp, **w_cm, **w_desc, **w_rf, **w_split, **w_metric, **w_stop, **w_ctrl}
     w["config_status_label"] = config_status_label
@@ -222,6 +224,7 @@ def main_page():
             table_ref[0] = None
             ds_name = w["dataset_select"].value
             target_col = _config["datasets"][ds_name]["target"]
+
             # (1) Results table
             render_results_table(
                 top10, w["metric_select"].value, results_container, config=_config)

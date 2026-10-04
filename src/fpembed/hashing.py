@@ -26,6 +26,12 @@ def fp_params_hash(
     When *method* is ``None`` or ``"geometric"`` with no *method_params*,
     the hash is identical to the original implementation (backward compatible).
 
+    This hash is a cache key, not a complete identity for a persisted array or
+    a trained model: it does not cover the output dtype or encoding, the
+    preprocessing policy, or dependency versions.
+    ``EmbeddedFingerprintGenerator.representation_manifest()`` provides that
+    record.
+
     Args:
         fp_type: Fingerprint type identifier (e.g. ``"ecfp"``).
         fp_params: Type-specific fingerprint parameters.

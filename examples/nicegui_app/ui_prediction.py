@@ -145,24 +145,27 @@ def render_vega_chart(spec: dict, container) -> None:
     spec_json = json.dumps(spec)
     logger.info("render_vega_chart: chart_id=%s spec_size=%d chart_type=prediction", vis_id, len(spec_json))
 
+    spinner_height = spec.get("height", 400)
     with container:
         ui.html(
             f'<div id="{vis_id}" style="width:100%; position:relative;">'
             f'<div id="{spinner_id}" style="display:flex; align-items:center;'
-            f' justify-content:center; height:500px;">'
+            f' justify-content:center; height:{spinner_height}px;">'
             f'<span style="font-size:1.2em; color:#888;">Loading chart\u2026</span>'
             f"</div></div>",
             sanitize=False,
         ).classes("w-full")
 
-    js_code = _build_vega_embed_js(vis_id, spinner_id, spec_json)
+    js_code = _build_vega_embed_js(vis_id, spinner_id, spec_json, spinner_height)
     ui.run_javascript(js_code)
 
 
-def _build_vega_embed_js(vis_id: str, spinner_id: str, spec_json: str) -> str:
+def _build_vega_embed_js(
+    vis_id: str, spinner_id: str, spec_json: str, spinner_height: int = 400
+) -> str:
     """Build JS code for vegaEmbed with polling, try/catch, and error display."""
     es = ("color:red; display:flex; align-items:center; "
-          "justify-content:center; height:500px; font-size:1.1em;")
+          f"justify-content:center; height:{spinner_height}px; font-size:1.1em;")
     diag = ("function _diag(evt,err){"
             "fetch('/api/chart_diagnostic',{method:'POST',"
             "headers:{'Content-Type':'application/json'},"

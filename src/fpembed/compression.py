@@ -37,6 +37,7 @@ from fpembed.dtype_support import (
     normalize_dtype,
     validate_dtype_for_method,
 )
+from fpembed.input_validation import validate_real_finite_input
 
 _BLOCKWISE_METHODS = {"geometric", "linear", "log", "uniform"}
 _PROJECTION_METHODS = {"hadamard", "random_projection"}
@@ -149,11 +150,15 @@ def compress_fingerprint(
 
     Raises
     ------
+    TypeError
+        If the input dtype is not a real numeric kind (complex, object,
+        string, and similar are rejected rather than coerced).
     ValueError
         If *size* is invalid, *method* is unsupported, *method_params*
         contains invalid keys/values, *dtype* is unsupported, the
-        method/dtype combination is incompatible, or ``uint16`` is requested
-        for non-binary input.
+        method/dtype combination is incompatible, floating input contains
+        NaN or either infinity, or ``uint16`` is requested for non-binary
+        input.
     """
     if not isinstance(size, int) or size <= 0:
         raise ValueError(
@@ -180,6 +185,8 @@ def compress_fingerprint(
         raise ValueError(
             "Input feature axis (last axis) must be non-empty; got length 0."
         )
+
+    validate_real_finite_input(vector)
 
     fp_len = vector.shape[-1] if vector.ndim > 1 else vector.shape[0]
     if fp_len % size != 0:

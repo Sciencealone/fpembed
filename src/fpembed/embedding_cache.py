@@ -3,10 +3,12 @@
 This module provides :class:`BoundedCache`, a small least-recently-used cache
 that the caller fills explicitly. Unlike :func:`functools.lru_cache`, key
 derivation and value computation live in different places: the caller derives
-the key, looks it up, and — only on a miss — computes and stores the value.
-That split is what lets a SMILES canonicalisation produce the key while the
-already-parsed molecule is reused for the embedding, so a miss never costs a
-redundant parse.
+the key, looks it up, and, only on a miss, computes and stores the value. That
+split lets a caller key on a canonicalised SMILES string while owning its own
+parsing policy. The SMILES path in ``generator_smiles.py`` deliberately
+reparses the canonical string when building the molecule, so a cache miss does
+incur that reparse; the key alone does not remove it. The reparse is what makes
+results invariant to the spelling of the input.
 
 The method names (:meth:`~BoundedCache.cache_info`,
 :meth:`~BoundedCache.cache_clear`) deliberately mirror the interface of

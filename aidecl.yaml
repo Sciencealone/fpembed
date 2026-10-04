@@ -1,7 +1,7 @@
 schema_version: 1.0.0
 project:
-  name: fpembed
-  version: 0.2.0
+  name: FPembed
+  version: 0.2.1
   license: MIT
   content_type: software
 ai_usage:
@@ -18,7 +18,10 @@ ai_usage:
     - name: Amazon Kiro
       type: standalone
       hosting: cloud
-  summary: Spec-driven AI development with Amazon Kiro was applied for this project.
+    - name: JetBrains Junie
+      type: standalone
+      hosting: cloud
+  summary: Spec-driven AI development with Amazon Kiro and JetBrains Junie was applied for this project.
 declaration:
   declared_by: Mikhail Markovskii
-  date: '2026-05-01'
+  date: '2026-10-04'
