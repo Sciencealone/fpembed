@@ -32,6 +32,7 @@
 - [Datasets](#datasets)
 - [License](#license)
 - [Legal & Trademark Notice](#legal--trademark-notice)
+- [Commercial & Research Services](#commercial--research-services)
 - [AI disclosure](#ai-disclosure)
 - [Support](#support)
 
@@ -508,6 +509,12 @@ This project is licensed under the terms of the MIT open source license. Please 
 The name **"FPembed"**, its branding, and identifiers are the intellectual property of the project author (@Sciencealone). 
 * **Commercial Branding:** The unauthorized use of the name "FPembed" to brand, market, or promote commercial software, corporate AI engines, or proprietary services within the fields of bioinformatics, chemoinformatics, and AI drug discovery is strictly prohibited.
 * **Community Protection:** This notice is established to prevent public confusion and to protect the open-source community from misleading corporate misrepresentations. For licensing queries regarding the project name, please open an issue or contact the author directly.
+
+## Commercial & Research Services
+
+For the project onboarding, corporate deployments, high-performance compute scaling (HPC / Databricks / Ray), or custom model fine-tuning for pharma R&D and research grants (Horizon Europe / Art. 60 LOSU / AEI) as well as other related tasks, official technical support and contract services are available.
+
+**[View Full Service Offerings & Contact Details](COMMERCIAL_SUPPORT.md)**
 
 ## AI disclosure
 

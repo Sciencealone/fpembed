@@ -40,3 +40,8 @@ markers = [
     "fast: marks tests as fast (< 5 seconds)",
     "slow: marks tests as slow (property-based, 5-60 seconds)",
 ]
+
+[project.urls]
+"Homepage" = "https://github.com/Sciencealone/FPembed"
+"Commercial & Research Support" = "https://github.com/Sciencealone/FPembed/blob/main/COMMERCIAL_SUPPORT.md"
+"Issue Tracker" = "https://github.com/Sciencealone/FPembed/issues"
