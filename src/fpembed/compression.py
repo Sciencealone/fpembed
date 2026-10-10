@@ -112,6 +112,27 @@ def _validate_method_params(method: str, method_params: dict) -> None:
             )
 
 
+_METHOD_PARAM_DEFAULTS: dict[str, Any] = {
+    "seed": _DEFAULT_SEED,
+    "sparse": False,
+    "interleave": False,
+}
+
+
+def _resolve_method_params(method: str, method_params: dict) -> dict:
+    """Return every effective method parameter, applying code defaults.
+
+    Omitted and explicitly-default parameters normalise to the same mapping,
+    so two equivalent configurations produce an identical representation
+    manifest. Keys come from ``_VALID_PARAMS``; the value defaults mirror the
+    ``.get(...)`` calls in the kernels below.
+    """
+    return {
+        key: method_params.get(key, _METHOD_PARAM_DEFAULTS[key])
+        for key in sorted(_VALID_PARAMS[method])
+    }
+
+
 def compress_fingerprint(
     vector: npt.NDArray[Any],
     size: int,
