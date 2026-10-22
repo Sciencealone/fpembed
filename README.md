@@ -9,6 +9,7 @@
 - [Introduction](#introduction)
 - [Installation](#installation)
   - [Conda Environment](#conda-environment)
+  - [Dependency Files](#dependency-files)
 - [Quick Start](#quick-start)
 - [Why Use Embedded Fingerprints?](#why-use-embedded-fingerprints)
   - [Storage Size](#storage-size)
@@ -29,8 +30,7 @@
   - [Compression Limits](#compression-limits)
   - [Performance Characteristics](#performance-characteristics)
 - [Project Structure](#project-structure)
-- [Running the Demo App](#running-the-demo-app)
-- [Datasets](#datasets)
+- [Examples](#examples)
 - [License](#license)
 - [Legal & Trademark Notice](#legal--trademark-notice)
 - [Commercial & Research Services](#commercial--research-services)
@@ -74,13 +74,7 @@ cd fpembed
 pip install -e .
 ```
 
-Add the demo app dependencies (nicegui, optuna, pandas, scikit-learn, etc.) with the `app` extra:
-
-```bash
-pip install -e ".[app]"
-```
-
-> **Future consumer path.** Once a release is published to PyPI, `pip install fpembed` (or `pip install fpembed[app]`) will install the packaged wheel. That path is not the repository-setup route above and is listed here only for eventual published-package users; the working tree is always installed editable.
+The installed version is reported by `fpembed.__version__` and by the package metadata (`pip show fpembed`).
 
 ### Conda Environment
 
@@ -95,11 +89,10 @@ This installs all dependencies and the `fpembed` package in editable mode.
 
 ### Dependency Files
 
-Three files describe dependencies, each with a distinct role — do not confuse the tested lock with the metadata ranges:
+Two files describe dependencies, each with a distinct role - do not confuse the tested lock with the metadata ranges:
 
-- **`pyproject.toml`** — package metadata. Declares the version ranges of `fpembed`'s own dependencies (core and the `app` extra) that a consumer resolves against.
-- **`requirements.txt`** — the third-party application lock: exact pins of the app's runtime dependencies, tested together. It does **not** self-pin `fpembed`; the package itself is installed editable via `pip install -e .`.
-- **`environment.yml`** — the authoritative conda environment. It recreates the full development environment and installs `fpembed` editable (`-e .`). `requirements.txt` and `environment.yml` are kept in sync, with `environment.yml` as the source of truth.
+- **`pyproject.toml`** - package metadata. Declares the compatible version ranges of `fpembed`'s dependencies that a consumer resolves against.
+- **`environment.yml`** - the authoritative exact-pin lock. It recreates the full development and test environment and installs `fpembed` editable (`-e .`).
 
 ## Quick Start
 
@@ -521,56 +514,15 @@ fpembed/
 │   ├── smiles_utils.py                # parse_smiles, canonicalize_smiles
 │   └── py.typed                       # PEP 561 marker
 ├── examples/
-│   ├── quickstart.ipynb               # usage notebook
-│   ├── datasets/                      # molecular datasets (RedDB, NFA, QM9)
-│   └── nicegui_app/                   # NiceGUI demo application
+│   └── quickstart.ipynb               # usage notebook
 ├── pyproject.toml                     # package metadata and dependency ranges
-├── requirements.txt                   # third-party app lock (no FPembed self-pin)
-├── environment.yml                    # authoritative conda env (installs -e .)
+├── environment.yml                    # authoritative exact-pin conda env (installs -e .)
 └── README.md
 ```
 
-## Running the Demo App
+## Examples
 
-The NiceGUI demo app provides an interactive UI for optimizing fingerprint embeddings. The examples live in the repository working tree, not in the installed package - clone the repository to access them.
-
-```bash
-git clone https://github.com/Sciencealone/fpembed.git
-cd fpembed
-
-# Install FPembed (editable) plus the app dependencies from the working tree
-pip install -e ".[app]"
-
-# Alternatively, recreate the full pinned environment (installs -e . itself)
-conda env create -f environment.yml
-conda activate fpembed
-
-# Run the NiceGUI app
-cd examples/nicegui_app
-python app.py
-```
-
-The `-e ".[app]"` install and `environment.yml` both provide `fpembed` from the working tree; neither pulls a `fpembed` wheel from PyPI. `requirements.txt` pins only the third-party app dependencies and can be installed on top of the editable package (`pip install -r requirements.txt`) if you want the exact tested versions.
-
-### Demo App Cache Lifecycle
-
-The demo app writes a cache database at `examples/nicegui_app/cache.db` to avoid recomputing fingerprints and embeddings across runs.
-
-- **Purpose & growth.** The cache accumulates computed results as you evaluate molecules. It can grow large during extended optimization runs — provide at least **100 GB of free disk space** before a large evaluation.
-- **Safe deletion.** `cache.db` is a pure regenerable artifact. You may delete it at any time while the app is **not running**; the app recreates an empty cache on the next launch. Stop the app before deleting the file to avoid removing a database with open handles.
-- **Data-loss consequences.** Deleting the cache loses only saved computation, never source data or results you have exported — every entry can be recomputed from the input molecules. The trade-off is a slower first run afterward while the cache refills. Deleting it while the app is running is unsafe and can leave a partially written file; if that happens, stop the app and delete the leftover file before restarting.
-
-A Jupyter notebook with quick-start examples is also available at `examples/quickstart.ipynb`.
-
-## Datasets
-
-The following datasets are included in `examples/datasets/` (obtained from their original sources):
-
-| Dataset | DOI |
-|---|---|
-| RedDB Database | https://doi.org/10.1038/s41597-022-01832-2 |
-| Non-Fullerene Acceptors Database | https://doi.org/10.1016/j.joule.2017.10.006 |
-| QM9 Database | https://doi.org/10.1038/sdata.2014.22 |
+A Jupyter notebook with quick-start examples is available at `examples/quickstart.ipynb`.
 
 ## License
 
