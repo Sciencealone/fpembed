@@ -9,7 +9,8 @@ which additionally draws a random subset of coordinates.
 
 Public API
 ----------
-fwht                        : In-place Fast Walsh-Hadamard Transform.
+fwht                        : In-place Fast Walsh-Hadamard Transform,
+                              re-exported from :mod:`fpembed.compression_fwht`.
 build_srht_signs            : Generate the seeded ±1 sign vector for the Hadamard path.
 compress_hadamard           : Compress via sign flips → FWHT → fixed-prefix truncate.
 build_rp_matrix             : Build a random projection matrix (dense or sparse).
@@ -24,6 +25,7 @@ from typing import Any
 import numpy as np
 import numpy.typing as npt
 
+from fpembed.compression_fwht import _fwht_inplace
 from fpembed.compression_projection_cache import get_rp_matrix_t
 from fpembed.dtype_support import is_binary
 
@@ -34,60 +36,10 @@ from fpembed.dtype_support import is_binary
 # toward and then past the dense product, so the dense path is used instead.
 GATHER_MAX_DENSITY = 0.10
 
-def _fwht_inplace(x: npt.NDArray[np.float64]) -> npt.NDArray[np.float64]:
-    """Vectorized in-place FWHT butterfly, along the last axis.
 
-    Works for a single 1-D vector or a 2-D batch (rows, length) — each
-    butterfly level is one NumPy operation over the whole array instead of
-    a Python-level loop over individual index pairs. Mutates *x* in-place
-    via reshape views (no copy of the full array), matching the original
-    per-pair butterfly algorithm exactly. Only the first operand is copied
-    per level; the second write reuses the second-half view as its output.
-
-    Parameters
-    ----------
-    x : ndarray
-        Float64 array whose last axis has length L (must be a power of 2).
-
-    Returns
-    -------
-    ndarray
-        The same array, modified in-place.
-    """
-    length = x.shape[-1]
-    h = 1
-    while h < length:
-        view = x.reshape(*x.shape[:-1], -1, 2, h)
-        a = view[..., 0, :].copy()
-        b = view[..., 1, :]
-        # First half is disjoint memory from b, so writing it does not disturb
-        # the view b still read by the subtract below.
-        np.add(a, b, out=view[..., 0, :])
-        np.subtract(a, b, out=b)
-        h *= 2
-    return x
-
-
-def fwht(x: npt.NDArray[np.float64]) -> npt.NDArray[np.float64]:
-    """In-place Fast Walsh-Hadamard Transform (butterfly algorithm).
-
-    Operates in O(L log L) using only additions and subtractions. Vectorized
-    via NumPy reshape/broadcast (see `_fwht_inplace`) rather than nested
-    Python loops — benchmarked at ~32x faster than the original per-pair
-    loop implementation for batched Hadamard compression, with identical
-    output (see dev_docs/investigation_compression_acceleration_options.md).
-
-    Parameters
-    ----------
-    x : ndarray
-        1-D float64 array of length L (must be a power of 2).
-
-    Returns
-    -------
-    ndarray
-        The same array, modified in-place.
-    """
-    return _fwht_inplace(x)
+def _is_power_of_two(n: int) -> bool:
+    """Return True if *n* is a positive power of two."""
+    return n > 0 and (n & (n - 1)) == 0
 
 
 @functools.lru_cache(maxsize=32)
@@ -179,13 +131,31 @@ def compress_hadamard(
     -------
     ndarray of float64
         Compressed embedding — ``(1, D)`` or ``(N, D)``.
+
+    Raises
+    ------
+    ValueError
+        If *size* is not a positive divisor of the feature length, or if the
+        feature length or ``D = L // size`` is not a power of two.
     """
     single = vector.ndim == 1
     if single:
         vector = vector[np.newaxis, :]
 
     cols = vector.shape[1]
+
+    if size < 1:
+        raise ValueError(f"Compression factor must be a positive integer, got {size}.")
+    if cols % size != 0:
+        raise ValueError(
+            f"Feature length ({cols}) is not evenly divisible by size ({size})."
+        )
     output_dim = cols // size
+    if not _is_power_of_two(cols) or not _is_power_of_two(output_dim):
+        raise ValueError(
+            f"hadamard requires L ({cols}) and D = L // size ({output_dim}) to "
+            f"be powers of two."
+        )
     norm = 1.0 / np.sqrt(cols)
 
     if output_dim < cols:
@@ -322,18 +292,27 @@ def compress_random_projection(
         supplied.
     matrix_t : ndarray, optional
         Pre-transposed C-contiguous ``(L, D)`` form of *matrix* (from
-        :func:`_rp_matrix_T`). When supplied it is reused for both the gather
-        and the dense path; otherwise ``matrix.T`` is used, correct but with
-        no memoisation, matching the prior behaviour.
+        :func:`_rp_matrix_T`). When supplied it takes precedence over *matrix*
+        and is reused for both the gather and the dense path; otherwise
+        ``matrix.T`` is used, correct but with no memoisation, matching the
+        prior behaviour.
 
     Returns
     -------
     ndarray of float64
         Compressed embedding — ``(1, D)`` or ``(N, D)``.
+
+    Raises
+    ------
+    ValueError
+        If neither a matrix nor its transpose is supplied, or if the matrix
+        feature axis does not match the input length.
     """
     single = vector.ndim == 1
     if single:
         vector = vector[np.newaxis, :]
+
+    n_rows, length = vector.shape
 
     if matrix_t is not None:
         mt = matrix_t
@@ -342,7 +321,12 @@ def compress_random_projection(
     else:
         raise ValueError("compress_random_projection requires matrix or matrix_t")
 
-    n_rows, length = vector.shape
+    if mt.shape[0] != length:
+        raise ValueError(
+            f"Projection matrix feature axis does not match the input length: "
+            f"matrix shape {mt.shape}, input shape {vector.shape}."
+        )
+
     if n_rows == 0:
         return np.empty((0, mt.shape[1]), dtype=np.float64)
     density = int(np.count_nonzero(vector)) / (n_rows * length)

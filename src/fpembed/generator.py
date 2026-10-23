@@ -210,7 +210,13 @@ class EmbeddedFingerprintGenerator(_SmilesSelfiesMixin):
 
     @property
     def params_hash(self) -> str:
-        """Read-only 16-char hex hash of fp_type + fp_params."""
+        """Read-only 16-char hex hash covering fp_type, fp_params, method, and
+        method_params.
+
+        The hash excludes ``fp_size``, the compression factor, the output
+        dtype, preprocessing, and dependency versions; use
+        :meth:`representation_manifest` for a complete identity.
+        """
         return self._params_hash
 
     @property

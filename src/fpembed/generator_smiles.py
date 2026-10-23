@@ -32,17 +32,19 @@ class _SmilesSelfiesMixin:
     ) -> npt.NDArray[Any] | None:
         """Generate a fingerprint from a SMILES string.
 
-        Raw-keyed branches (canonicalize=False or validate=False) parse once and
-        reuse that Mol. The default branch embeds the Mol re-parsed from the
-        canonical SMILES, so differently spelled inputs for the same molecule
-        embed identically for every fp_type, including order-sensitive ones.
-        With caching a warm hit costs no parse.
+        ``canonicalize`` selects the keying branch. When true, the string is
+        canonicalized and the Mol re-parsed from the canonical SMILES is
+        embedded, so differently spelled inputs for the same molecule embed
+        identically for every fp_type, including order-sensitive ones; a miss
+        costs two parses and a warm hit none. When false, the raw string is the
+        cache key and the Mol parsed from it is embedded, so a miss costs one
+        parse and a hit none.
+
+        Parsing always validates. ``validate`` is accepted for API
+        compatibility and does not change which branch runs.
         """
-        if validate and canonicalize:
+        if canonicalize:
             return self._from_smiles_canonical(smiles)
-        # Raw-keyed branches: the raw string is today's cache key, so consult
-        # the embedding cache before validating — a cached string was already
-        # validated once and validation is deterministic.
         return self._from_smiles_raw_keyed(smiles)
 
     @staticmethod

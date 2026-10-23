@@ -181,6 +181,11 @@ def compress_fingerprint(
         NaN or either infinity, or ``uint16`` is requested for non-binary
         input.
     """
+    if isinstance(size, bool):
+        raise ValueError(
+            f"Size must be a positive integer, not a boolean ({size!r}). "
+            "Try size = 16, or size = 32"
+        )
     if not isinstance(size, int) or size <= 0:
         raise ValueError(
             "Size must be a positive integer. Try size = 16, or size = 32"

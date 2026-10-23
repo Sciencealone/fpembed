@@ -210,7 +210,7 @@ gen.clear_cache()
 
 ### SMILES Canonicalization and Chemical Standardization
 
-FPembed canonicalizes SMILES spelling before keying and before parsing, so the same molecule written two ways produces the same embedding: the pipeline works with the canonical form (atom ordering and RDKit's aromatic form). That makes results spelling-invariant for atom-order-sensitive backends, and it is why the cache key can be built from the canonical string.
+FPembed canonicalizes SMILES spelling before keying and before parsing, so the same molecule written two ways produces the same embedding: the pipeline works with the canonical form (atom ordering and RDKit's aromatic form). That makes results spelling-invariant for atom-order-sensitive backends, and it is why the cache key can be built from the canonical string. The `canonicalize` flag alone selects this branch; `validate` is accepted for API compatibility and does not change which branch runs, because parsing always validates.
 
 Canonicalization is not chemical standardization. FPembed does not remove salts, normalize tautomers, pick a protonation state, or impose a stereochemistry policy, because those decisions change scientific meaning and are the caller's to make. Two inputs that differ by a counter-ion or a tautomer stay distinct. If your workflow needs standardization, apply it before calling FPembed and describe it with `representation_manifest(preprocessing=...)` (see [Representation Manifest](#representation-manifest)).
 
@@ -230,7 +230,7 @@ The output dimensionality (D = L / C) is deterministic and independent of datase
 | Raw binary FP (bit-packed, 1 bit per element) | 256 B | 512 B | ~25 MB |
 | Embedded, C=16 (float64) | 1 KB | 2 KB | ~100 MB |
 | Embedded, C=16 (uint16) | 256 B | 512 B | ~25 MB |
-| Embedded, C=32 (float64, `uniform`/projection only) | 512 B | 1 KB | ~50 MB |
+| Embedded, C=32 (float64, `geometric`/`uniform`/projection) | 512 B | 1 KB | ~50 MB |
 
 A word on the baseline. Comparing an embedding against a raw fingerprint *stored as float64* overstates the storage gain, because a raw fingerprint is binary and would sensibly be bit-packed. Against **bit-packed** raw fingerprints, the `geometric` embedding at C=16 in float64 is actually *larger* (1 KB vs 256 B per molecule at L=2048): geometric at C=16 is a reversible re-encoding — it packs each 16-bit block into a single wide value, carrying the same information in fewer but larger numbers. Storing that embedding as `uint16` (see [Output Dtype](#output-dtype)) brings it back to parity with bit-packed input.
 
@@ -389,7 +389,7 @@ Both `EmbeddedFingerprintGenerator` (constructor argument `dtype`, applied to ev
 |---|---|---|
 | `float64` (default) | 8 | The values existing callers already get, computed exactly as before. For `geometric`, the value equals the integer code divided by `2**C - 1`, apart from the float64 round-off of the accumulation path. |
 | `float32` | 4 | **Information-preserving** for `geometric` at `C <= 16` (see below). ~1e-7 relative error for the projection methods. Permitted for every method. |
-| `uint16` | 2 | The **exact integer code**. Permitted only for `geometric` and `uniform`, and only for binary input. |
+| `uint16` | 2 | The **exact integer code**. While compression is active it is permitted only for `geometric` and `uniform`, and only for binary input. With compression inactive every accepted dtype stores the raw binary fingerprint. |
 
 `dtype` reduces the **returned and stored** size of the embedding. It does **not** reduce peak transient memory during compression: the float paths still compute internally in `float64` and cast on return, so the working set is unchanged — only the array you keep is smaller.
 
@@ -451,7 +451,7 @@ recovered = codes / (2**16 - 1)
 
 ### Representation Manifest
 
-`fp_params_hash()` is a cache key: it covers the fingerprint type, its parameters, and the compression method. It is deliberately narrow and must not change, so it is not a complete identity for an array you persist. `EmbeddedFingerprintGenerator.representation_manifest()` returns a fresh JSON-compatible mapping for that purpose:
+`fp_params_hash()` is a cache key: it covers the fingerprint type, its parameters, `method`, and `method_params`. It does not cover `fp_size`, the compression factor, the output dtype, preprocessing, or dependency versions. It is deliberately narrow and must not change, so it is not a complete identity for an array you persist; `fp_type`, `method`, and `method_params` are reserved keys inside the parameter mapping and raise `ValueError`. `EmbeddedFingerprintGenerator.representation_manifest()` returns a fresh JSON-compatible mapping for that purpose:
 
 ```python
 import json
@@ -491,7 +491,7 @@ These are measured wall times on one machine, not a theoretical claim: the prune
 
 **Hadamard specifics.** The implementation applies seeded random sign flips and keeps the first `D` outputs in Sylvester order. It does not randomly choose which `D` of the `L` coordinates to keep, so it is a seeded, truncated Hadamard projection rather than conventional randomly subsampled SRHT. With the retained `1/sqrt(L)` normalization, averaging over the random signs gives an expected squared norm of `D / L` times the input squared norm; a distance-scale correction would multiply the outputs by `sqrt(L / D)`, but that does not remove the fixed-coordinate selection. Read the fold's bit-identity with the full transform as correctness of this transform, not as evidence of neighborhood preservation.
 
-**Projection matrix cache.** The random-projection matrix is cached to avoid redrawing it on every call. Only a **single canonical orientation** is retained per parameter set — one C-contiguous `(L, D)` matrix; the `(D, L)` orientation is served as a non-owning `.T` view of the same buffer, so no second owning copy exists. The cache is bounded by **total retained bytes**, not entry count: the budget defaults to 512 MiB (`RP_CACHE_BYTE_BUDGET` in `compression_projection_cache.py`), with a small entry-count floor so a single oversized matrix cannot evict itself. Least-recently-used matrices are dropped once the accumulated bytes exceed the budget.
+**Projection matrix cache.** The random-projection matrix is cached to avoid redrawing it on every call. Only a **single canonical orientation** is retained per parameter set — one C-contiguous `(L, D)` matrix; the `(D, L)` orientation is served as a non-owning `.T` view of the same buffer, so no second owning copy is retained. During a cache miss the transient peak is higher than the retained matrix: the `(D, L)` draw and the `(L, D)` contiguous copy coexist until the draw is released. The cache is bounded by **total retained bytes**, not entry count: the budget defaults to 512 MiB (`RP_CACHE_BYTE_BUDGET` in `compression_projection_cache.py`), with a small entry-count floor so a single oversized matrix cannot evict itself. Least-recently-used matrices are dropped once the accumulated bytes exceed the budget.
 
 ## Project Structure
 
@@ -503,6 +503,7 @@ fpembed/
 │   ├── generator_smiles.py            # SMILES/SELFIES/Mol input mixin
 │   ├── compression.py                 # compress_fingerprint (orchestrator)
 │   ├── compression_blockwise.py       # block-wise weight schemes
+│   ├── compression_fwht.py            # in-place Fast Walsh-Hadamard Transform
 │   ├── compression_projection.py      # seeded truncated Hadamard + random projection
 │   ├── compression_projection_cache.py # byte-bounded projection-matrix cache
 │   ├── dtype_support.py               # output dtype validation and casting
