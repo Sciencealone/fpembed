@@ -25,17 +25,23 @@ from typing import Any
 import numpy as np
 
 from fpembed.compression import _resolve_method_params
-from fpembed.skfp_factory import _ALLOWED_FP_PARAMS
+from fpembed.skfp_factory import _ALLOWED_FP_PARAMS, _FIXED_PARAM_KEYS
 
-_SCHEMA_VERSION = 1
+_SCHEMA_VERSION = 2
 
 # Physical output encodings. "raw_binary" is an uncompressed 0/1 fingerprint
 # in the requested dtype; "normalized_block_value" is the geometric float
 # value n/(2**C - 1); "mean_block_value" is the uniform float value
 # popcount/C; "weighted_block_value" is the linear/log weighted block sum;
 # the two integer labels are the exact uint16 codes, and "projection_value"
-# is a Hadamard or random-projection output.
+# is a Hadamard or random-projection output. The count labels distinguish an
+# uncompressed count vector, its log1p form, the uniform block mean count, and
+# a count projection.
 _RAW_ENCODING = "raw_binary"
+_RAW_COUNT_ENCODING = "raw_count"
+_RAW_COUNT_LOG1P_ENCODING = "raw_count_log1p"
+_COUNT_MEAN_ENCODING = "count_mean_block_value"
+_COUNT_PROJECTION_ENCODING = "count_projection_value"
 _PROJECTION_ENCODING = "projection_value"
 _INTEGER_ENCODINGS = {"geometric": "integer_code", "uniform": "integer_count"}
 _BLOCKWISE_ENCODINGS = {
@@ -66,6 +72,17 @@ _CANONICALIZATION = {
 }
 
 
+def _effective_size(backend: Any, native_size: int) -> int:
+    """Return the number of independent bit positions.
+
+    Count simulation spends four physical bits per feature, so the usable
+    position count is a quarter of the native width.
+    """
+    if bool(getattr(backend, "count_simulation", False)):
+        return native_size // 4
+    return native_size
+
+
 def build_representation_manifest(generator: Any, preprocessing: dict | None) -> dict:
     """Return a fresh JSON-compatible identity of *generator*'s representation.
 
@@ -93,6 +110,10 @@ def build_representation_manifest(generator: Any, preprocessing: dict | None) ->
         key: _json_scalar(getattr(generator._skfp_fp, key))
         for key in sorted(_ALLOWED_FP_PARAMS.get(fp_type, ()))
     }
+    fixed_params = {
+        key: _json_scalar(getattr(generator._skfp_fp, key))
+        for key in _FIXED_PARAM_KEYS.get(fp_type, ())
+    }
 
     output_dim = generator._out_dim()
     output_dtype = generator.dtype
@@ -109,8 +130,15 @@ def build_representation_manifest(generator: Any, preprocessing: dict | None) ->
         "fingerprint": {
             "type": fp_type,
             "size": generator.fp_size,
-            "encoding": "binary",
+            "native_size": generator.native_size,
+            "padding": generator.padding,
+            "effective_size": _effective_size(
+                generator._skfp_fp, generator.native_size
+            ),
+            "encoding": "count" if generator.count else "binary",
+            "count_transform": generator.count_transform,
             "params": resolved_defaults,
+            "fixed_params": fixed_params,
         },
         "compression": {
             "active": compression_active,
@@ -122,7 +150,10 @@ def build_representation_manifest(generator: Any, preprocessing: dict | None) ->
         "output": {
             "dim": output_dim,
             "dtype": output_dtype.name,
-            "encoding": _output_encoding(compression_active, method, output_dtype),
+            "encoding": _output_encoding(
+                compression_active, method, output_dtype,
+                generator.count, generator.count_transform,
+            ),
         },
         "preprocessing": {
             "canonicalization": dict(_CANONICALIZATION),
@@ -132,9 +163,82 @@ def build_representation_manifest(generator: Any, preprocessing: dict | None) ->
     }
 
 
-def _output_encoding(compression_active: bool, method: str | None, dtype: np.dtype) -> str:
+def build_precomputed_manifest(compressor: Any) -> dict:
+    """Return a fresh schema-2 identity for a precomputed compressor."""
+    active = compressor._compression > 0
+    output_dim = (
+        compressor._input_dim // compressor._compression
+        if active else compressor._input_dim
+    )
+    method = compressor._method if active else None
+    method_params = (
+        _resolve_method_params(method, compressor._method_params)
+        if active else {}
+    )
+    fingerprint_params = {
+        "source_id": compressor._source_id,
+        "normalize": compressor._normalize,
+    }
+    if compressor._center_id is not None:
+        fingerprint_params["center_id"] = compressor._center_id
+
+
+    return {
+        "schema_version": _SCHEMA_VERSION,
+        "fingerprint": {
+            "type": "precomputed",
+            "size": compressor._input_dim,
+            "native_size": compressor._input_dim,
+            "padding": "none",
+            "effective_size": compressor._input_dim,
+            "encoding": "external",
+            "count_transform": "none",
+            "params": fingerprint_params,
+            "fixed_params": {},
+        },
+        "compression": {
+            "active": active,
+            "factor": compressor._compression if active else None,
+            "method": method,
+            "method_params": method_params,
+            "output_dim": output_dim,
+        },
+        "output": {
+            "dim": output_dim,
+            "dtype": compressor._dtype.name,
+            "encoding": (
+                "external_projection_value" if active else "external_raw"
+            ),
+        },
+        "preprocessing": {
+            "canonicalization": None,
+            "external": None,
+        },
+        "versions": {
+            name: _distribution_version(name) for name in _DISTRIBUTIONS
+        },
+    }
+
+
+def _output_encoding(
+    compression_active: bool,
+    method: str | None,
+    dtype: np.dtype,
+    count: bool = False,
+    count_transform: str = "none",
+) -> str:
     if not compression_active:
+        if count:
+            return (
+                _RAW_COUNT_LOG1P_ENCODING
+                if count_transform == "log1p"
+                else _RAW_COUNT_ENCODING
+            )
         return _RAW_ENCODING
+    if count:
+        if method == "uniform":
+            return _COUNT_MEAN_ENCODING
+        return _COUNT_PROJECTION_ENCODING
     if dtype.type is np.uint16:
         # uint16 is only accepted for geometric/uniform, but fall back to the
         # generic code label rather than raising if that invariant ever drifts.

@@ -24,8 +24,10 @@ from fpembed.smiles_utils import (
     canonicalize_to_mol,
 )
 from fpembed.hashing import fp_params_hash
+from fpembed.truncation import truncate_embedding
+from fpembed.precomputed import PrecomputedEmbeddingCompressor
 
-__version__ = "0.2.4"
+__version__ = "0.3.0"
 
 __all__ = [
     "EmbeddedFingerprintGenerator",
@@ -34,5 +36,7 @@ __all__ = [
     "canonicalize_smiles",
     "canonicalize_to_mol",
     "fp_params_hash",
+    "truncate_embedding",
+    "PrecomputedEmbeddingCompressor",
     "__version__",
 ]

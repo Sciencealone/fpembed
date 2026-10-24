@@ -16,12 +16,9 @@ from fpembed.compression import (
     _check_geometric_cap,
     _ALL_METHODS,
     _validate_method_params,
-    _DEFAULT_SEED,
 )
 from fpembed.compression_blockwise import compress_blockwise_exact_uint16
 from fpembed.compression_projection import (
-    _rp_matrix_T,
-    build_srht_signs,
     compress_hadamard,
     compress_random_projection,
 )
@@ -33,6 +30,18 @@ from fpembed.dtype_support import (
 )
 from fpembed.embedding_cache import BoundedCache
 from fpembed.generator_smiles import _SmilesSelfiesMixin
+from fpembed.generator_support import (
+    SUPPORTED_FP_TYPES,
+    RepresentationStateMixin,
+    extract_supplied_matrix,
+    prepare_projection_artifacts,
+    raw_fingerprint,
+    reject_count_simulation,
+    resolve_method,
+    resolve_native_layout,
+    validate_count_dtype,
+    validate_count_mode,
+)
 from fpembed.hashing import fp_params_hash
 from fpembed.skfp_factory import _build_skfp
 
@@ -42,17 +51,13 @@ if TYPE_CHECKING:
 CacheInfo = namedtuple("CacheInfo", ["hits", "misses", "maxsize", "currsize"])
 _EMPTY_CACHE_INFO = CacheInfo(hits=0, misses=0, maxsize=0, currsize=0)
 
-_SUPPORTED_FP_TYPES = (
-    "ecfp", "atom_pair", "topological_torsion", "rdkit", "layered", "pattern",
-    "avalon", "secfp", "mhfp", "map",
-)
-
-
-class EmbeddedFingerprintGenerator(_SmilesSelfiesMixin):
+class EmbeddedFingerprintGenerator(_SmilesSelfiesMixin, RepresentationStateMixin):
     """Unified fingerprint generator backed by scikit-fingerprints.
 
-    Supports ten fp_types: ecfp, atom_pair, topological_torsion,
-    rdkit, layered, pattern, avalon, secfp, mhfp, map.
+    Supports fifteen fp_types: ecfp, atom_pair, topological_torsion,
+    rdkit, layered, pattern, avalon, secfp, mhfp, map, lingo, pharmacophore,
+    pubchem, laggner, erg. The last three are fixed-width: their native widths
+    are 881, 307, and 315, and ``fp_size`` is the power-of-two padded width.
 
     Raw binary fingerprints are optionally reduced to ``D = L / compression``
     features by a pluggable compression method chosen at construction. Available
@@ -63,13 +68,19 @@ class EmbeddedFingerprintGenerator(_SmilesSelfiesMixin):
     matrix depend on the selected method and its parameters, not on a single
     fixed mask. With ``compression`` of ``None`` or ``0`` the raw fingerprint is
     returned uncompressed.
+
+    With ``count=True`` the backend returns occurrence counts instead of bits.
+    Count output is stored as ``float64`` or ``float32``; ``float32`` is exact
+    for integer counts below ``2**24`` and makes no exactness claim above that
+    bound. ``count_transform="log1p"`` applies ``numpy.log1p`` to the whole
+    representation, raw and compressed. ``uint16`` is rejected for counts.
     """
 
     __slots__ = (
         "_fp_type", "_fp_size", "_compression", "_fp_params",
         "_method", "_method_params", "_projection_cache",
         "_skfp_fp", "_params_hash", "_cache_size", "_l1_cache", "_l2_cache",
-        "_dtype",
+        "_dtype", "_count", "_count_transform", "_native_size", "_padding",
     )
 
     def __init__(
@@ -79,9 +90,12 @@ class EmbeddedFingerprintGenerator(_SmilesSelfiesMixin):
         compression: int | None,
         fp_params: dict | None = None,
         cache_size: int | None = None,
-        method: str = "geometric",
+        method: str | None = None,
         method_params: dict | None = None,
         dtype: Any = np.float64,
+        *,
+        count: bool = False,
+        count_transform: str = "none",
     ) -> None:
         if fp_params is None:
             fp_params = {}
@@ -109,11 +123,15 @@ class EmbeddedFingerprintGenerator(_SmilesSelfiesMixin):
             if cache_size <= 0:
                 raise ValueError(f"cache_size must be positive, got {cache_size}")
 
-        if fp_type not in _SUPPORTED_FP_TYPES:
+        validate_count_mode(fp_type, count, count_transform)
+        if fp_type not in SUPPORTED_FP_TYPES:
             raise ValueError(
                 f"Unsupported fp_type '{fp_type}'. "
-                f"Supported: {', '.join(_SUPPORTED_FP_TYPES)}"
+                f"Supported: {', '.join(SUPPORTED_FP_TYPES)}"
             )
+
+        effective: int = 0 if (compression is None or compression == 0) else compression
+        method = resolve_method(method, count, effective)
         if method not in _ALL_METHODS:
             raise ValueError(
                 f"Unsupported method '{method}'. "
@@ -121,7 +139,6 @@ class EmbeddedFingerprintGenerator(_SmilesSelfiesMixin):
             )
         _validate_method_params(method, method_params)
 
-        effective: int = 0 if (compression is None or compression == 0) else compression
         if effective != 0:
             if not _is_power_of_two(effective):
                 raise ValueError(f"compression must be a power of 2, got {effective}")
@@ -139,7 +156,20 @@ class EmbeddedFingerprintGenerator(_SmilesSelfiesMixin):
             raise ValueError("Hadamard method requires fp_size to be a power of 2")
 
         normalized_dtype = normalize_dtype(dtype)
+        validate_count_dtype(normalized_dtype, count)
         validate_dtype_for_method(normalized_dtype, method, effective)
+
+        supplied_matrix = None
+        stored_method_params = dict(method_params)
+        if "matrix" in method_params:
+            if effective == 0:
+                raise ValueError(
+                    "method_params['matrix'] requires active compression; "
+                    "compression is None or 0."
+                )
+            supplied_matrix, stored_method_params = extract_supplied_matrix(
+                method_params, fp_size, fp_size // effective,
+            )
 
         self._dtype = normalized_dtype
         self._fp_type = fp_type
@@ -147,27 +177,25 @@ class EmbeddedFingerprintGenerator(_SmilesSelfiesMixin):
         self._compression = effective
         self._fp_params = dict(fp_params)
         self._method = method
-        self._method_params = dict(method_params)
+        self._method_params = stored_method_params
         self._cache_size = cache_size
-        self._skfp_fp: Any = _build_skfp(fp_type, fp_size, fp_params)
+        self._count = count
+        self._count_transform = count_transform
+        reject_count_simulation(count, fp_params)
+        self._skfp_fp: Any = _build_skfp(fp_type, fp_size, fp_params, count=count)
+        self._native_size, self._padding = resolve_native_layout(
+            self._skfp_fp, fp_size, fp_type
+        )
 
         # Precompute projection artifacts for projection methods
-        self._projection_cache: Any = None
-        if effective != 0 and method == "hadamard":
-            seed = self._method_params.get("seed", _DEFAULT_SEED)
-            self._projection_cache = build_srht_signs(fp_size, seed)
-        elif effective != 0 and method == "random_projection":
-            seed = self._method_params.get("seed", _DEFAULT_SEED)
-            sparse = self._method_params.get("sparse", False)
-            output_dim = fp_size // effective
-            # Store the memoised C-contiguous (L, D) transpose so the primary
-            # single-molecule path reaches the sparse gather.
-            self._projection_cache = _rp_matrix_T(
-                fp_size, output_dim, seed, sparse
-            )
+        self._projection_cache: Any = prepare_projection_artifacts(
+            effective, method, fp_size, self._method_params, supplied_matrix,
+        )
 
         self._params_hash = fp_params_hash(
-            fp_type, fp_params, method=method, method_params=method_params,
+            fp_type, fp_params, method=method,
+            method_params=stored_method_params,
+            count=count, count_transform=count_transform,
         )
         if cache_size is not None:
             # Level 1 memoises raw string -> canonical string; level 2 is the
@@ -178,61 +206,29 @@ class EmbeddedFingerprintGenerator(_SmilesSelfiesMixin):
             self._l1_cache = None
             self._l2_cache = None
 
-    @property
-    def fp_type(self) -> str:
-        """Fingerprint type identifier."""
-        return self._fp_type
-
-    @property
-    def fp_size(self) -> int:
-        """Fingerprint bit-vector length."""
-        return self._fp_size
-
-    @property
-    def compression(self) -> int:
-        """Compression factor (0 means no compression)."""
-        return self._compression
-
-    @property
-    def fp_params(self) -> dict:
-        """Type-specific fingerprint parameters (copy)."""
-        return dict(self._fp_params)
-
-    @property
-    def method(self) -> str:
-        """Compression method name."""
-        return self._method
-
-    @property
-    def method_params(self) -> dict:
-        """Method-specific parameters (copy)."""
-        return dict(self._method_params)
-
-    @property
-    def params_hash(self) -> str:
-        """Read-only 16-char hex hash covering fp_type, fp_params, method, and
-        method_params.
-
-        The hash excludes ``fp_size``, the compression factor, the output
-        dtype, preprocessing, and dependency versions; use
-        :meth:`representation_manifest` for a complete identity.
-        """
-        return self._params_hash
-
-    @property
-    def dtype(self) -> np.dtype:
-        """Normalised output dtype applied to every returned array."""
-        return self._dtype
-
-    def _raw_fp(self, mol: Chem.Mol) -> npt.NDArray[np.uint8]:
-        return self._skfp_fp.transform([mol]).flatten()
+    def _raw_fp(self, mol: Chem.Mol) -> npt.NDArray[Any]:
+        """Raw (uncompressed) fingerprint, padded and count-transformed."""
+        return raw_fingerprint(
+            self._skfp_fp, mol, self._native_size, self._fp_size,
+            self._count, self._count_transform,
+        )
 
     def GetRawFingerprintAsNumPy(self, mol: Chem.Mol) -> npt.NDArray[Any]:
-        """Return the raw (uncompressed) fingerprint for a single Mol."""
+        """Return the raw (uncompressed) fingerprint for a single Mol.
+
+        Count mode returns the count values, or their ``log1p`` form, in the
+        requested float dtype. ``float32`` is exact for integer counts below
+        ``2**24``.
+        """
         if mol is None:
             raise ValueError("mol must not be None")
-        # Raw fingerprints are binary, so every accepted dtype is lossless.
-        return self._raw_fp(mol).astype(self._dtype)
+        raw = self._raw_fp(mol)
+        if self._dtype.type is np.uint16 and not is_binary(raw):
+            raise ValueError(
+                "dtype='uint16' requires binary values; count or transformed "
+                "representations cannot be stored as uint16."
+            )
+        return raw.astype(self._dtype)
 
     def GetFingerprintAsNumPy(self, mol: Chem.Mol) -> npt.NDArray[Any]:
         """Return the (optionally compressed) fingerprint for a single Mol."""
@@ -245,14 +241,15 @@ class EmbeddedFingerprintGenerator(_SmilesSelfiesMixin):
                 "the exact integer code is undefined otherwise."
             )
         if self._compression == 0:
-            # Raw fingerprints are binary, so every accepted dtype is lossless.
+            # Binary bits and count values are lossless in the float dtypes
+            # within the documented range.
             return raw.astype(self._dtype)
         if self._dtype.type is np.uint16:
             interleave = self._method_params.get("interleave", False)
             return compress_blockwise_exact_uint16(
                 raw, self._compression, scheme=self._method, interleave=interleave,
             ).flatten()
-        # Projection methods cast to float64 internally; pass raw uint8 through.
+        # Projection methods cast to float64 internally; pass the raw array through.
         if self._method == "hadamard":
             out = compress_hadamard(raw, self._compression, self._projection_cache)
             return cast_output(out.flatten(), self._dtype)
@@ -267,9 +264,6 @@ class EmbeddedFingerprintGenerator(_SmilesSelfiesMixin):
             method=self._method, method_params=self._method_params,
         ).flatten()
         return cast_output(out, self._dtype)
-
-    def _out_dim(self) -> int:
-        return self._fp_size // self._compression if self._compression > 0 else self._fp_size
 
     def GetFingerprintsAsNumPy(
         self, mols: Sequence[Chem.Mol | None], chunk_size: int | None = None,
@@ -334,9 +328,16 @@ class EmbeddedFingerprintGenerator(_SmilesSelfiesMixin):
             f"fp_size={self._fp_size}, compression={comp}, "
             f"fp_params={self._fp_params}"
         )
-        if self._method != "geometric" or self._method_params:
+        default_method = (
+            "uniform" if self._count and self._compression else "geometric"
+        )
+        if self._method != default_method or self._method_params:
             base += f", method='{self._method}'"
             base += f", method_params={self._method_params}"
+        if self._count:
+            base += ", count=True"
+        if self._count_transform != "none":
+            base += f", count_transform='{self._count_transform}'"
         if self._dtype.type is not np.float64:
             base += f", dtype='{self._dtype}'"
         base += ")"

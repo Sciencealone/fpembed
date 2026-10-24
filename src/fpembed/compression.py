@@ -8,6 +8,14 @@ based on the ``method`` parameter. Supports block-wise weight schemes
 The default behavior (``method="geometric"``, no ``method_params``)
 produces output identical to the original implementation.
 
+Count fingerprints are real-valued, not binary, but this standalone function
+stays representation-agnostic and accepts them for all six methods. Geometric
+reversibility and its integer code are binary-only: a count vector has no bit
+pattern to recover. On counts, ``uniform`` is the block mean count, and
+``random_projection`` uses the dense product because the sparse gather assumes
+binary non-zeros. The generator applies a narrower count method matrix; that
+restriction lives there, not here.
+
 Public API
 ----------
 compress_fingerprint : Compress a fingerprint array.
@@ -38,6 +46,10 @@ from fpembed.dtype_support import (
     validate_dtype_for_method,
 )
 from fpembed.input_validation import validate_real_finite_input
+from fpembed.matrix_identity import (
+    validate_matrix_array,
+    validate_projection_matrix,
+)
 
 _BLOCKWISE_METHODS = {"geometric", "linear", "log", "uniform"}
 _PROJECTION_METHODS = {"hadamard", "random_projection"}
@@ -49,7 +61,7 @@ _VALID_PARAMS: dict[str, set[str]] = {
     "log": {"interleave"},
     "uniform": {"interleave"},
     "hadamard": {"seed"},
-    "random_projection": {"seed", "sparse"},
+    "random_projection": {"seed", "sparse", "matrix"},
 }
 
 _DEFAULT_SEED = 42
@@ -111,6 +123,9 @@ def _validate_method_params(method: str, method_params: dict) -> None:
                 f"interleave is not applicable to method '{method}'"
             )
 
+    if "matrix" in method_params:
+        validate_matrix_array(method_params["matrix"])
+
 
 _METHOD_PARAM_DEFAULTS: dict[str, Any] = {
     "seed": _DEFAULT_SEED,
@@ -124,13 +139,18 @@ def _resolve_method_params(method: str, method_params: dict) -> dict:
 
     Omitted and explicitly-default parameters normalise to the same mapping,
     so two equivalent configurations produce an identical representation
-    manifest. Keys come from ``_VALID_PARAMS``; the value defaults mirror the
-    ``.get(...)`` calls in the kernels below.
+    manifest. Only keys with a declared default are resolved here; caller
+    matrix identity keys, when present, are copied through unchanged.
     """
-    return {
+    resolved = {
         key: method_params.get(key, _METHOD_PARAM_DEFAULTS[key])
         for key in sorted(_VALID_PARAMS[method])
+        if key in _METHOD_PARAM_DEFAULTS
     }
+    for key in ("matrix_id", "matrix_shape"):
+        if key in method_params:
+            resolved[key] = method_params[key]
+    return resolved
 
 
 def compress_fingerprint(
@@ -141,11 +161,16 @@ def compress_fingerprint(
     method_params: dict | None = None,
     dtype: Any = np.float64,
 ) -> npt.NDArray[Any]:
-    """Compress a binary fingerprint into a dense embedding.
+    """Compress a binary or count fingerprint into a dense embedding.
 
     Backward compatible: when ``method="geometric"``, ``method_params=None``,
     and ``dtype=np.float64`` (all defaults), produces output bit-identical to
     the previous implementation.
+
+    Count arrays are accepted by every method. ``geometric`` reversibility and
+    its integer code are defined only for binary input. ``uniform`` returns the
+    block mean count, and ``random_projection`` falls back to the dense product
+    for non-binary input.
 
     Parameters
     ----------
@@ -156,7 +181,9 @@ def compress_fingerprint(
     method : str
         Compression method name.
     method_params : dict or None
-        Method-specific parameters.
+        Method-specific parameters. For ``random_projection`` this may include
+        a canonical ``(D, L)`` ``matrix``; its feature axis must match the
+        input length.
     dtype : dtype-like
         Output dtype — ``float64`` (default), ``float32``, or ``uint16``.
         ``uint16`` is accepted only for ``geometric``/``uniform`` and returns
@@ -239,6 +266,12 @@ def compress_fingerprint(
 
     output_dim = fp_len // size
 
+    supplied_matrix = None
+    if method == "random_projection" and "matrix" in method_params:
+        supplied_matrix = validate_projection_matrix(
+            method_params["matrix"], fp_size=fp_len, output_dim=output_dim,
+        )
+
     # Zero-row 2-D input is defined as valid: (0, L) -> (0, D). Returned
     # directly because the per-method transforms cannot reshape an empty
     # feature buffer. Validation guards above (and the hadamard power-of-two
@@ -266,10 +299,15 @@ def compress_fingerprint(
             result = compress_hadamard(vector, size, signs)
         else:
             # method == "random_projection"
-            seed = method_params.get("seed", _DEFAULT_SEED)
-            sparse = method_params.get("sparse", False)
-            matrix_t = _rp_matrix_T(fp_len, output_dim, seed, sparse)
-            result = compress_random_projection(vector, matrix_t=matrix_t)
+            if supplied_matrix is not None:
+                result = compress_random_projection(
+                    vector, matrix=supplied_matrix
+                )
+            else:
+                seed = method_params.get("seed", _DEFAULT_SEED)
+                sparse = method_params.get("sparse", False)
+                matrix_t = _rp_matrix_T(fp_len, output_dim, seed, sparse)
+                result = compress_random_projection(vector, matrix_t=matrix_t)
 
     return cast_output(result, dt)
 
