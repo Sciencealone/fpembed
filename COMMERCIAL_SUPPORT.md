@@ -43,6 +43,6 @@ The Maintainer can structure a project as a fixed deliverable or route it throug
 
 The Maintainer can discuss your requirements, prepare a formal quote, or start a Statement of Work:
 
-1. **Email:** `mikhail@markovskii.org`
+1. **Email:** `contact@fpembed.com` or **book a call:** https://calendly.com/contact-fpembed-com/30min
 2. **Information to Include:** A short overview of your use case (for example, compound library size, infrastructure stack, desired timelines).
 3. **Legal & Tax Status:** The Maintainer invoices through a registered Independent Contractor (*Autónomo*) in Spain (EU VIES / ROI compliant for 0% VAT cross-border invoicing).
