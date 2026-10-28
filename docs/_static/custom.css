@@ -14,3 +14,17 @@
 .fpembed-support a {
   color: #1a5fb4;
 }
+
+.fpembed-errors > summary {
+  padding: 0.35rem 0;
+  color: #2980b9;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.fpembed-errors span[id]:target + h4,
+.fpembed-errors section:target > h4 {
+  border-left: 3px solid #e0a63b;
+  padding-left: 0.5rem;
+  background: #fff8e5;
+}

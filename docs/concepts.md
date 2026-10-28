@@ -48,6 +48,9 @@ Returns an RDKit `Mol`, or `None` for a string RDKit cannot parse.
 
 ### Errors
 
+<details class="fpembed-errors">
+<summary>Show 1 entry</summary>
+
 (concepts-parse-smiles-smiles-type)=
 #### A SMILES argument is not a string
 
@@ -58,6 +61,8 @@ Returns an RDKit `Mol`, or `None` for a string RDKit cannot parse.
 **Fix:** Pass a Python string.
 
 **Example:** `parse_smiles(123)` raises the error.
+
+</details>
 
 (concepts-canonicalize-smiles)=
 ## `canonicalize_smiles`
@@ -74,6 +79,9 @@ Returns the canonical SMILES form, or `None` for an unparseable string.
 
 ### Errors
 
+<details class="fpembed-errors">
+<summary>Show 1 entry</summary>
+
 (concepts-canonicalize-smiles-smiles-type)=
 #### A SMILES argument is not a string
 
@@ -84,6 +92,8 @@ Returns the canonical SMILES form, or `None` for an unparseable string.
 **Fix:** Pass a Python string.
 
 **Example:** `canonicalize_smiles(123)` raises the error.
+
+</details>
 
 (concepts-canonicalize-to-mol)=
 ## `canonicalize_to_mol`
@@ -100,6 +110,9 @@ Parses once and returns `(canonical_smiles, mol)`, or `(None, None)` for an unpa
 
 ### Errors
 
+<details class="fpembed-errors">
+<summary>Show 1 entry</summary>
+
 (concepts-canonicalize-to-mol-smiles-type)=
 #### A SMILES argument is not a string
 
@@ -110,6 +123,8 @@ Parses once and returns `(canonical_smiles, mol)`, or `(None, None)` for an unpa
 **Fix:** Pass a Python string.
 
 **Example:** `canonicalize_to_mol(123)` raises the error.
+
+</details>
 
 ## Identity and reproducibility
 

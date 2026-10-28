@@ -207,6 +207,9 @@ Returns a 16-character hexadecimal string. The hash covers the sorted JSON paylo
 
 ### Errors
 
+<details class="fpembed-errors">
+<summary>Show 4 entries</summary>
+
 (identity-fp-params)=
 #### `fp_params` has a reserved key
 
@@ -251,6 +254,8 @@ Returns a 16-character hexadecimal string. The hash covers the sorted JSON paylo
 
 **Example:** `fp_params_hash("ecfp", {}, count=1)` raises the error.
 
+</details>
+
 (identity-representation-manifest)=
 ## `representation_manifest`
 
@@ -266,6 +271,9 @@ Returns a fresh schema 2 mapping on every call. Mutating the returned object doe
 
 ### Errors
 
+<details class="fpembed-errors">
+<summary>Show 1 entry</summary>
+
 (identity-preprocessing-json)=
 #### Preprocessing metadata must be JSON-serializable
 
@@ -276,6 +284,8 @@ Returns a fresh schema 2 mapping on every call. Mutating the returned object doe
 **Fix:** Convert the values to plain types such as `str`, `int`, `float`, `bool`, `None`, lists, and dicts.
 
 **Example:** A manifest built with `preprocessing={"scaler": np.float64}` raises the error.
+
+</details>
 
 (identity-cache-info)=
 ## `cache_info`

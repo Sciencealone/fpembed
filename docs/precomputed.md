@@ -49,6 +49,9 @@ Methods:
 
 ### Errors
 
+<details class="fpembed-errors">
+<summary>Show 11 entries</summary>
+
 (precomputed-argument-type)=
 #### An argument has the wrong type
 
@@ -172,6 +175,8 @@ Methods:
 
 The [method_params entry on the compression page](compression.md#compress_fingerprint) covers an unknown key or an invalid seed in `method_params`.
 
+</details>
+
 ## Compression and normalization
 
 The compressor subtracts the center before row L2 normalization. An all-zero row stays zero under L2 normalization. FPembed never fits the center; you supply it.
@@ -244,6 +249,9 @@ Returns `(D,)` for a single vector, `(N, D)` for a batch, or `(0, D)` for an emp
 
 ### Errors
 
+<details class="fpembed-errors">
+<summary>Show 2 entries</summary>
+
 (precomputed-compression-input)=
 #### The compression input has the wrong shape or values
 
@@ -265,6 +273,8 @@ Returns `(D,)` for a single vector, `(N, D)` for a batch, or `(0, D)` for an emp
 **Fix:** Reshape the array or configure the matching width.
 
 **Example:** `compress(np.zeros((10, 4)))` on a compressor with `input_dim=8` raises the error.
+
+</details>
 
 (precomputed-compress-one)=
 ## `compress_one`

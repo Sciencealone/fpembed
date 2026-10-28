@@ -112,6 +112,9 @@ For `random_projection`, `method_params["matrix"]` may hold a canonical `(D, L)`
 
 ### Errors
 
+<details class="fpembed-errors">
+<summary>Show 10 entries</summary>
+
 (compression-compression-input)=
 #### The compression input has the wrong shape, dtype, or values
 
@@ -222,6 +225,8 @@ For `random_projection`, `method_params["matrix"]` may hold a canonical `(D, L)`
 
 **Example:** `compress_fingerprint(np.ones(8), size=0)` raises the error.
 
+</details>
+
 (compression-truncate-embedding)=
 ## `truncate_embedding`
 
@@ -250,6 +255,9 @@ Use the helper for one projection embedding reused at a higher compression facto
 
 ### Errors
 
+<details class="fpembed-errors">
+<summary>Show 2 entries</summary>
+
 (compression-truncation)=
 #### The truncation target or method is invalid
 
@@ -271,3 +279,5 @@ Use the helper for one projection embedding reused at a higher compression facto
 **Fix:** Pass the documented type.
 
 **Example:** `truncate_embedding(np.zeros(8), target_dim="4", method="hadamard")` raises the target type error.
+
+</details>

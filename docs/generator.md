@@ -174,6 +174,9 @@ The constructor resolves the method, validates the dtype, builds the backend, an
 
 ### Errors
 
+<details class="fpembed-errors">
+<summary>Show 23 entries</summary>
+
 (generator-fp-size-positive)=
 #### `fp_size` must be positive
 
@@ -426,6 +429,8 @@ The constructor resolves the method, validates the dtype, builds the backend, an
 **Fix:** Pass a real, finite array with shape `(output_dim, fp_size)`.
 
 **Example:** `EmbeddedFingerprintGenerator("ecfp", 1024, 16, method="random_projection", method_params={"matrix": np.zeros(64)})` raises the 2-D error.
+
+</details>
 
 (generator-getfingerprintfromsmiles)=
 ## `GetFingerprintFromSmiles`

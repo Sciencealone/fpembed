@@ -37,7 +37,10 @@ html_baseurl = "https://fpembed.readthedocs.io/en/latest/"
 html_static_path = ["_static"]
 templates_path = ["_templates"]
 html_css_files = ["custom.css", "consent.css"]
-html_js_files = [("consent.js", {"defer": "defer"})]
+html_js_files = [
+    ("consent.js", {"defer": "defer"}),
+    ("errors-details.js", {"defer": "defer"}),
+]
 
 html_theme_options = {
     "navigation_depth": 3,
