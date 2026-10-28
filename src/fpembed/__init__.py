@@ -27,7 +27,7 @@ from fpembed.hashing import fp_params_hash
 from fpembed.truncation import truncate_embedding
 from fpembed.precomputed import PrecomputedEmbeddingCompressor
 
-__version__ = "0.3.0"
+__version__ = "0.3.1"
 
 __all__ = [
     "EmbeddedFingerprintGenerator",
