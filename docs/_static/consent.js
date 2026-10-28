@@ -45,6 +45,10 @@
   function readChoice() {
     try {
       var value = window.localStorage.getItem(STORAGE_KEY);
+      if (value === "accept" || value === "reject") {
+        value = value === "accept" ? "accepted" : "rejected";
+        storeChoice(value);
+      }
       if (value === "accepted" || value === "rejected") {
         return value;
       }
@@ -103,8 +107,8 @@
       CONSENT_TEXT +
       "</p>" +
       '<div class="fpembed-consent-actions">' +
-      '<button type="button" data-consent="accept">Accept</button>' +
-      '<button type="button" data-consent="reject">Reject</button>' +
+      '<button type="button" data-consent="accepted">Accept</button>' +
+      '<button type="button" data-consent="rejected">Reject</button>' +
       '<a href="privacy.html">Privacy</a>' +
       "</div>" +
       "</div>";
@@ -124,6 +128,9 @@
   }
 
   function choose(state) {
+    if (state !== "accepted" && state !== "rejected") {
+      return;
+    }
     choice = state;
     storeChoice(state);
     applySdkState(state);
@@ -180,6 +187,7 @@
       window.posthog.init(posthogKey, {
         api_host: POSTHOG_HOST,
         ui_host: UI_HOST,
+        opt_out_capturing_by_default: choice !== "accepted",
         cookieless_mode: "on_reject",
         person_profiles: "never",
         autocapture: false,
