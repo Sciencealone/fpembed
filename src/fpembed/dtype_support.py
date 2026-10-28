@@ -29,6 +29,8 @@ from typing import Any
 import numpy as np
 import numpy.typing as npt
 
+from fpembed.docs_links import with_docs
+
 # Accepted output dtypes. float64 is the default and preserves current
 # behaviour; float32 halves stored size for every method; uint16 carries
 # the exact integer code for the block-wise geometric/uniform schemes.
@@ -62,12 +64,18 @@ def normalize_dtype(dtype: Any) -> np.dtype:
         dt = np.dtype(dtype)
     except TypeError as exc:
         raise ValueError(
-            f"Unsupported dtype {dtype!r}. Accepted dtypes: {_ACCEPTED_NAMES}."
+            with_docs(
+                f"Unsupported dtype {dtype!r}. Accepted dtypes: {_ACCEPTED_NAMES}.",
+                "generator-dtype",
+            )
         ) from exc
 
     if dt.type not in _ALLOWED:
         raise ValueError(
-            f"Unsupported dtype '{dt}'. Accepted dtypes: {_ACCEPTED_NAMES}."
+            with_docs(
+                f"Unsupported dtype '{dt}'. Accepted dtypes: {_ACCEPTED_NAMES}.",
+                "generator-dtype",
+            )
         )
     return dt
 
@@ -113,16 +121,22 @@ def validate_dtype_for_method(
 
     if method in _NON_INTEGER_METHODS:
         raise ValueError(
-            f"dtype='uint16' has no exact integer representation for method "
-            f"'{method}'. Use 'geometric' or 'uniform', or dtype float32/float64."
+            with_docs(
+                f"dtype='uint16' has no exact integer representation for method "
+                f"'{method}'. Use 'geometric' or 'uniform', or dtype float32/float64.",
+                "generator-uint16-no-integer",
+            )
         )
 
     limit = _UINT16_MAX_COMPRESSION[method]
     if compression > limit:
         raise ValueError(
-            f"dtype='uint16' with method '{method}' requires compression "
-            f"<= {limit}; the integer code would exceed uint16 range at "
-            f"compression={compression}."
+            with_docs(
+                f"dtype='uint16' with method '{method}' requires compression "
+                f"<= {limit}; the integer code would exceed uint16 range at "
+                f"compression={compression}.",
+                "compression-dtype",
+            )
         )
 
 

@@ -21,6 +21,8 @@ from typing import Any
 import numpy as np
 import numpy.typing as npt
 
+from fpembed.docs_links import with_docs
+
 # Real numeric kinds: boolean, signed integer, unsigned integer, floating.
 _REAL_KINDS = frozenset("biuf")
 
@@ -58,16 +60,22 @@ def validate_matrix_array(matrix: Any) -> npt.NDArray[Any]:
     array = np.asarray(matrix)
     if array.ndim != 2:
         raise ValueError(
-            f"Projection matrix must be 2-D; got shape {array.shape}."
+            with_docs(
+                f"Projection matrix must be 2-D; got shape {array.shape}.",
+                "generator-matrix",
+            )
         )
     if array.dtype.kind not in _REAL_KINDS:
         raise TypeError(
-            f"Projection matrix dtype '{array.dtype}' is not a real numeric "
-            "type; boolean, integer, or floating input is required."
+            with_docs(
+                f"Projection matrix dtype '{array.dtype}' is not a real numeric "
+                "type; boolean, integer, or floating input is required.",
+                "generator-matrix",
+            )
         )
     if array.dtype.kind == "f" and not np.isfinite(array).all():
         raise ValueError(
-            "Projection matrix must contain only finite values."
+            with_docs("Projection matrix must contain only finite values.", "generator-matrix")
         )
     return array
 
@@ -96,7 +104,10 @@ def validate_projection_matrix(
     expected = (output_dim, fp_size)
     if array.shape != expected:
         raise ValueError(
-            f"Projection matrix must have shape (D, L) = {expected}; "
-            f"got {array.shape}."
+            with_docs(
+                f"Projection matrix must have shape (D, L) = {expected}; "
+                f"got {array.shape}.",
+                "compression-matrix",
+            )
         )
     return np.ascontiguousarray(array, dtype=np.float64)

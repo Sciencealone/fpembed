@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from rdkit import Chem
 
+from fpembed.docs_links import with_docs
+
 
 def parse_smiles(smiles: str) -> Chem.Mol | None:
     """Convert a SMILES string to an RDKit Mol object.
@@ -28,7 +30,12 @@ def parse_smiles(smiles: str) -> Chem.Mol | None:
         True
     """
     if not isinstance(smiles, str):
-        raise TypeError(f"smiles must be a str, got {type(smiles).__name__}")
+        raise TypeError(
+            with_docs(
+                f"smiles must be a str, got {type(smiles).__name__}",
+                "concepts-parse-smiles-smiles-type",
+            )
+        )
     return Chem.MolFromSmiles(smiles)
 
 
@@ -57,7 +64,12 @@ def canonicalize_smiles(smiles: str) -> str | None:
         True
     """
     if not isinstance(smiles, str):
-        raise TypeError(f"smiles must be a str, got {type(smiles).__name__}")
+        raise TypeError(
+            with_docs(
+                f"smiles must be a str, got {type(smiles).__name__}",
+                "concepts-canonicalize-smiles-smiles-type",
+            )
+        )
     mol = Chem.MolFromSmiles(smiles)
     if mol is None:
         return None
@@ -92,7 +104,12 @@ def canonicalize_to_mol(
         (None, None)
     """
     if not isinstance(smiles, str):
-        raise TypeError(f"smiles must be a str, got {type(smiles).__name__}")
+        raise TypeError(
+            with_docs(
+                f"smiles must be a str, got {type(smiles).__name__}",
+                "concepts-canonicalize-to-mol-smiles-type",
+            )
+        )
     mol = Chem.MolFromSmiles(smiles)
     if mol is None:
         return None, None

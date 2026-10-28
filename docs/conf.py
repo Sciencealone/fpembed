@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 import re
 from pathlib import Path
 
@@ -11,6 +12,11 @@ VERSION = re.search(
     r'__version__ = "([^"]+)"',
     PACKAGE_INIT.read_text(encoding="utf-8"),
 ).group(1)
+
+# The public PostHog write key arrives from the build environment. An unset
+# variable leaves an empty string, and the consent script then loads no
+# analytics and hides the banner.
+posthog_key = os.environ.get("POSTHOG_KEY", "")
 
 project = "FPembed"
 author = "Mikhail Markovskii"
@@ -45,6 +51,7 @@ html_context = {
     "github_repo": "fpembed",
     "github_version": "main",
     "conf_py_path": "/docs/",
+    "posthog_key": posthog_key,
 }
 
 exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]

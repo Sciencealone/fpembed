@@ -8,6 +8,7 @@ from typing import Any
 
 import numpy as np
 
+from fpembed.docs_links import with_docs
 from fpembed.matrix_identity import matrix_id
 
 
@@ -104,21 +105,35 @@ def fp_params_hash(
     """
     if not isinstance(count, bool):
         raise TypeError(
-            f"count must be a bool, got {type(count).__name__}"
+            with_docs(
+                f"count must be a bool, got {type(count).__name__}",
+                "identity-argument-type",
+            )
         )
     if count_transform not in _COUNT_TRANSFORMS:
         raise ValueError(
-            f"count_transform must be one of {_COUNT_TRANSFORMS}, "
-            f"got {count_transform!r}"
+            with_docs(
+                f"count_transform must be one of {_COUNT_TRANSFORMS}, "
+                f"got {count_transform!r}",
+                "identity-count-transform-value",
+            )
         )
     if count_transform != "none" and not count:
-        raise ValueError("count_transform requires count=True")
+        raise ValueError(
+            with_docs(
+                "count_transform requires count=True",
+                "identity-count-transform-requires-count",
+            )
+        )
 
     reserved = [key for key in _RESERVED_KEYS if key in fp_params]
     if reserved:
         raise ValueError(
-            f"{reserved} reserved key(s) cannot appear in fp_params; the "
-            f"reserved keys are {', '.join(_RESERVED_KEYS)}."
+            with_docs(
+                f"{reserved} reserved key(s) cannot appear in fp_params; the "
+                f"reserved keys are {', '.join(_RESERVED_KEYS)}.",
+                "identity-fp-params",
+            )
         )
 
     normalized = _normalize_params(fp_params)

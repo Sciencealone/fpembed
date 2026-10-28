@@ -22,6 +22,8 @@ from skfp.fingerprints import (
     TopologicalTorsionFingerprint,
 )
 
+from fpembed.docs_links import with_docs
+
 _ALLOWED_FP_PARAMS: dict[str, set[str]] = {
     "ecfp": {
         "radius", "include_chirality", "use_pharmacophoric_invariants",
@@ -76,13 +78,19 @@ def _build_skfp(
     if unknown:
         if "variant" in unknown:
             raise ValueError(
-                f"'variant' is not accepted for fp_type '{fp_type}': the fixed "
-                "binary/bit output mode is enforced and cannot be overridden. "
-                f"Accepted fp_params keys for '{fp_type}': {sorted(allowed)}."
+                with_docs(
+                    f"'variant' is not accepted for fp_type '{fp_type}': the fixed "
+                    "binary/bit output mode is enforced and cannot be overridden. "
+                    f"Accepted fp_params keys for '{fp_type}': {sorted(allowed)}.",
+                    "generator-fp-params",
+                )
             )
         raise ValueError(
-            f"Unknown fp_params key(s) for fp_type '{fp_type}': "
-            f"{sorted(unknown)}. Accepted keys: {sorted(allowed)}."
+            with_docs(
+                f"Unknown fp_params key(s) for fp_type '{fp_type}': "
+                f"{sorted(unknown)}. Accepted keys: {sorted(allowed)}.",
+                "generator-fp-params",
+            )
         )
 
     if fp_type == "ecfp":

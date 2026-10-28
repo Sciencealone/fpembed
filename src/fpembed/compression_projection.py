@@ -27,6 +27,7 @@ import numpy.typing as npt
 
 from fpembed.compression_fwht import _fwht_inplace
 from fpembed.compression_projection_cache import get_rp_matrix_t
+from fpembed.docs_links import with_docs
 from fpembed.dtype_support import is_binary
 
 # Maximum fraction of non-zero elements for which the sparse gather beats the
@@ -145,16 +146,27 @@ def compress_hadamard(
     cols = vector.shape[1]
 
     if size < 1:
-        raise ValueError(f"Compression factor must be a positive integer, got {size}.")
+        raise ValueError(
+            with_docs(
+                f"Compression factor must be a positive integer, got {size}.",
+                "compression-argument-value",
+            )
+        )
     if cols % size != 0:
         raise ValueError(
-            f"Feature length ({cols}) is not evenly divisible by size ({size})."
+            with_docs(
+                f"Feature length ({cols}) is not evenly divisible by size ({size}).",
+                "compression-compression-divisible",
+            )
         )
     output_dim = cols // size
     if not _is_power_of_two(cols) or not _is_power_of_two(output_dim):
         raise ValueError(
-            f"hadamard requires L ({cols}) and D = L // size ({output_dim}) to "
-            f"be powers of two."
+            with_docs(
+                f"hadamard requires L ({cols}) and D = L // size ({output_dim}) to "
+                f"be powers of two.",
+                "compression-hadamard-dimensions",
+            )
         )
     norm = 1.0 / np.sqrt(cols)
 
@@ -323,8 +335,11 @@ def compress_random_projection(
 
     if mt.shape[0] != length:
         raise ValueError(
-            f"Projection matrix feature axis does not match the input length: "
-            f"matrix shape {mt.shape}, input shape {vector.shape}."
+            with_docs(
+                f"Projection matrix feature axis does not match the input length: "
+                f"matrix shape {mt.shape}, input shape {vector.shape}.",
+                "compression-matrix",
+            )
         )
 
     if n_rows == 0:

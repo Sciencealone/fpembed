@@ -11,6 +11,21 @@ the versions of the packages that produced the values.
 The generator imports this module lazily, so importing it from the compression
 and scikit-fingerprints factories cannot form an import cycle.
 
+Schema history
+--------------
+Schema 2 adds ``fingerprint.encoding``, ``fingerprint.count_transform``,
+``fingerprint.native_size``, ``fingerprint.padding``, and the count output
+labels. A schema 1 manifest predates count mode and fixed-width padding, so it
+is read as a binary, unpadded, count-free representation. Schema 2 does not
+redefine any schema 1 field.
+
+Before its first public release, 0.3.0, schema 2 also gains
+``fingerprint.effective_size`` and ``fingerprint.fixed_params``. These fields
+are additive, so the version stays at 2: 0.2.3 predates schema 2, and no
+published artifact carries the earlier shape. A schema 2 manifest written
+without them is read as ``effective_size`` equal to ``native_size`` and
+``fixed_params`` empty.
+
 Public API
 ----------
 build_representation_manifest : Build the manifest mapping for a generator.
@@ -25,6 +40,7 @@ from typing import Any
 import numpy as np
 
 from fpembed.compression import _resolve_method_params
+from fpembed.docs_links import with_docs
 from fpembed.skfp_factory import _ALLOWED_FP_PARAMS, _FIXED_PARAM_KEYS
 
 _SCHEMA_VERSION = 2
@@ -251,12 +267,20 @@ def _copy_external(preprocessing: dict | None) -> dict | None:
     if preprocessing is None:
         return None
     if not isinstance(preprocessing, dict):
-        raise TypeError("preprocessing must be a JSON-serializable mapping")
+        raise TypeError(
+            with_docs(
+                "preprocessing must be a JSON-serializable mapping",
+                "identity-preprocessing-json",
+            )
+        )
     try:
         return json.loads(json.dumps(preprocessing))
     except (TypeError, ValueError) as exc:
         raise TypeError(
-            "preprocessing must be a JSON-serializable mapping"
+            with_docs(
+                "preprocessing must be a JSON-serializable mapping",
+                "identity-preprocessing-json",
+            )
         ) from exc
 
 

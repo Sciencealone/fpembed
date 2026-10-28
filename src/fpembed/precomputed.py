@@ -26,6 +26,7 @@ from fpembed.compression_projection import (
     compress_hadamard,
     compress_random_projection,
 )
+from fpembed.docs_links import with_docs
 from fpembed.dtype_support import cast_output, normalize_dtype
 from fpembed.generator_support import (
     extract_supplied_matrix,
@@ -67,58 +68,95 @@ class PrecomputedEmbeddingCompressor:
     ) -> None:
         if isinstance(input_dim, bool) or not isinstance(input_dim, int):
             raise TypeError(
-                f"input_dim must be an int, got {type(input_dim).__name__}"
+                with_docs(
+                    f"input_dim must be an int, got {type(input_dim).__name__}",
+                    "precomputed-argument-type",
+                )
             )
         if input_dim <= 0:
-            raise ValueError(f"input_dim must be positive, got {input_dim}")
+            raise ValueError(
+                with_docs(
+                    f"input_dim must be positive, got {input_dim}",
+                    "precomputed-argument-value",
+                )
+            )
 
         if not isinstance(source_id, str) or not source_id.strip():
             raise ValueError(
-                "source_id must be a non-empty string identifying the model "
-                "or checkpoint that produced the embeddings."
+                with_docs(
+                    "source_id must be a non-empty string identifying the model "
+                    "or checkpoint that produced the embeddings.",
+                    "precomputed-source-id-empty",
+                )
             )
 
         if compression is not None:
             if isinstance(compression, bool) or not isinstance(compression, int):
                 raise TypeError(
-                    f"compression must be an int or None, got "
-                    f"{type(compression).__name__}"
+                    with_docs(
+                        "compression must be an int or None, got "
+                        f"{type(compression).__name__}",
+                        "precomputed-argument-type",
+                    )
                 )
             if compression < 0:
-                raise ValueError(f"compression must be >= 0, got {compression}")
+                raise ValueError(
+                    with_docs(
+                        f"compression must be >= 0, got {compression}",
+                        "precomputed-argument-value",
+                    )
+                )
         effective = 0 if (compression is None or compression == 0) else compression
         if effective != 0:
             if not _is_power_of_two(effective):
                 raise ValueError(
-                    f"compression must be a power of 2, got {effective}"
+                    with_docs(
+                        f"compression must be a power of 2, got {effective}",
+                        "precomputed-compression-power-of-two",
+                    )
                 )
             if effective > input_dim / 2:
                 raise ValueError(
-                    f"compression ({effective}) must be <= input_dim / 2 "
-                    f"({input_dim // 2})"
+                    with_docs(
+                        f"compression ({effective}) must be <= input_dim / 2 "
+                        f"({input_dim // 2})",
+                        "precomputed-compression-half",
+                    )
                 )
             if input_dim % effective != 0:
                 raise ValueError(
-                    f"input_dim ({input_dim}) must be evenly divisible by "
-                    f"compression ({effective})"
+                    with_docs(
+                        f"input_dim ({input_dim}) must be evenly divisible by "
+                        f"compression ({effective})",
+                        "precomputed-input-dim-divisible",
+                    )
                 )
 
         if normalize not in _NORMALIZATIONS:
             raise ValueError(
-                f"normalize must be one of {_NORMALIZATIONS}, got {normalize!r}"
+                with_docs(
+                    f"normalize must be one of {_NORMALIZATIONS}, got {normalize!r}",
+                    "precomputed-normalize",
+                )
             )
 
         try:
             normalized_dtype = normalize_dtype(dtype)
         except ValueError as exc:
             raise ValueError(
-                "dtype must be float64 or float32 for precomputed embeddings; "
-                "uint16 and integer types are not supported."
+                with_docs(
+                    "dtype must be float64 or float32 for precomputed embeddings; "
+                    "uint16 and integer types are not supported.",
+                    "precomputed-dtype",
+                )
             ) from exc
         if normalized_dtype.type is np.uint16:
             raise ValueError(
-                "dtype='uint16' is not supported for precomputed embeddings: "
-                "external values are continuous. Use float64 or float32."
+                with_docs(
+                    "dtype='uint16' is not supported for precomputed embeddings: "
+                    "external values are continuous. Use float64 or float32.",
+                    "precomputed-dtype",
+                )
             )
 
         center_array = None
@@ -128,8 +166,11 @@ class PrecomputedEmbeddingCompressor:
             validate_real_finite_input(center_array)
             if center_array.ndim != 1 or center_array.shape[0] != input_dim:
                 raise ValueError(
-                    f"center must be a vector of length input_dim "
-                    f"({input_dim}); got shape {center_array.shape}."
+                    with_docs(
+                        f"center must be a vector of length input_dim "
+                        f"({input_dim}); got shape {center_array.shape}.",
+                        "precomputed-center-length",
+                    )
                 )
             center_array = np.ascontiguousarray(center_array, dtype=np.float64)
             center_id = array_id(center_array)
@@ -144,8 +185,11 @@ class PrecomputedEmbeddingCompressor:
                 method = "random_projection"
             if method not in _ACTIVE_METHODS:
                 raise ValueError(
-                    f"Precomputed compression supports only "
-                    f"{', '.join(_ACTIVE_METHODS)}; got '{method}'."
+                    with_docs(
+                        f"Precomputed compression supports only "
+                        f"{', '.join(_ACTIVE_METHODS)}; got '{method}'.",
+                        "precomputed-method",
+                    )
                 )
             _validate_method_params(method, method_params)
             output_dim = input_dim // effective
@@ -153,9 +197,12 @@ class PrecomputedEmbeddingCompressor:
                 _is_power_of_two(input_dim) and _is_power_of_two(output_dim)
             ):
                 raise ValueError(
-                    f"hadamard requires input_dim ({input_dim}) and "
-                    f"input_dim // compression ({output_dim}) to be powers of "
-                    "two."
+                    with_docs(
+                        f"hadamard requires input_dim ({input_dim}) and "
+                        f"input_dim // compression ({output_dim}) to be powers of "
+                        "two.",
+                        "precomputed-hadamard-dimensions",
+                    )
                 )
             supplied_matrix = None
             stored_method_params = dict(method_params)
@@ -223,13 +270,19 @@ class PrecomputedEmbeddingCompressor:
         array = np.asarray(embeddings)
         if array.ndim not in (1, 2):
             raise ValueError(
-                f"Input must be 1-D (input_dim,) or 2-D (N, input_dim) with "
-                f"input_dim={self._input_dim}; got shape {array.shape}."
+                with_docs(
+                    f"Input must be 1-D (input_dim,) or 2-D (N, input_dim) with "
+                    f"input_dim={self._input_dim}; got shape {array.shape}.",
+                    "precomputed-compression-input",
+                )
             )
         if array.shape[-1] != self._input_dim:
             raise ValueError(
-                f"Input feature axis must equal input_dim "
-                f"({self._input_dim}); got shape {array.shape}."
+                with_docs(
+                    f"Input feature axis must equal input_dim "
+                    f"({self._input_dim}); got shape {array.shape}.",
+                    "precomputed-input-feature-axis",
+                )
             )
         validate_real_finite_input(array)
         work = array.astype(np.float64, copy=True)
@@ -271,8 +324,11 @@ class PrecomputedEmbeddingCompressor:
         array = np.asarray(embedding)
         if array.ndim != 1:
             raise ValueError(
-                f"compress_one expects a 1-D vector of length input_dim "
-                f"({self._input_dim}); got shape {array.shape}."
+                with_docs(
+                    f"compress_one expects a 1-D vector of length input_dim "
+                    f"({self._input_dim}); got shape {array.shape}.",
+                    "precomputed-compression-input",
+                )
             )
         return self._compress_prepared(self._prepare(array))
 

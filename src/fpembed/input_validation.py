@@ -17,6 +17,8 @@ from typing import Any
 import numpy as np
 import numpy.typing as npt
 
+from fpembed.docs_links import with_docs
+
 # NumPy dtype kinds that are real numbers: boolean, signed integer, unsigned
 # integer, floating. Everything else (complex, object, string, datetime) is
 # rejected rather than silently coerced.
@@ -54,7 +56,9 @@ def validate_real_finite_input(vector: npt.NDArray[Any]) -> None:
     """
     kind = vector.dtype.kind
     if kind not in _REAL_NUMERIC_KINDS:
-        raise TypeError(_NONREAL_MSG.format(dtype=vector.dtype))
+        raise TypeError(
+            with_docs(_NONREAL_MSG.format(dtype=vector.dtype), "compression-compression-input")
+        )
     if kind == "f":
         _require_finite(vector)
 
@@ -65,10 +69,14 @@ def _require_finite(vector: npt.NDArray[Any]) -> None:
         for start in range(0, vector.shape[0], _FINITE_CHUNK_ELEMENTS):
             chunk = vector[start:start + _FINITE_CHUNK_ELEMENTS]
             if not np.isfinite(chunk).all():
-                raise ValueError(_NONFINITE_MSG)
+                raise ValueError(
+                    with_docs(_NONFINITE_MSG, "compression-compression-input")
+                )
         return
 
     for start in range(0, vector.shape[0], _FINITE_CHUNK_ROWS):
         block = vector[start:start + _FINITE_CHUNK_ROWS]
         if not np.isfinite(block).all():
-            raise ValueError(_NONFINITE_MSG)
+            raise ValueError(
+                with_docs(_NONFINITE_MSG, "compression-compression-input")
+            )

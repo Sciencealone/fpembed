@@ -22,6 +22,7 @@ from fpembed.compression_projection import (
     compress_hadamard,
     compress_random_projection,
 )
+from fpembed.docs_links import with_docs
 from fpembed.dtype_support import (
     cast_output,
     is_binary,
@@ -103,57 +104,106 @@ class EmbeddedFingerprintGenerator(_SmilesSelfiesMixin, RepresentationStateMixin
             method_params = {}
 
         if isinstance(fp_size, bool) or not isinstance(fp_size, int):
-            raise TypeError(f"fp_size must be an int, got {type(fp_size).__name__}")
+            raise TypeError(
+                with_docs(
+                    f"fp_size must be an int, got {type(fp_size).__name__}",
+                    "generator-argument-type",
+                )
+            )
         if fp_size <= 0:
-            raise ValueError(f"fp_size must be positive, got {fp_size}")
+            raise ValueError(
+                with_docs(f"fp_size must be positive, got {fp_size}", "generator-fp-size-positive")
+            )
 
         if compression is not None:
             if isinstance(compression, bool) or not isinstance(compression, int):
                 raise TypeError(
-                    f"compression must be an int or None, got {type(compression).__name__}"
+                    with_docs(
+                        "compression must be an int or None, got "
+                        f"{type(compression).__name__}",
+                        "generator-argument-type",
+                    )
                 )
             if compression < 0:
-                raise ValueError(f"compression must be >= 0, got {compression}")
+                raise ValueError(
+                    with_docs(
+                        f"compression must be >= 0, got {compression}",
+                        "generator-argument-value",
+                    )
+                )
 
         if cache_size is not None:
             if isinstance(cache_size, bool) or not isinstance(cache_size, int):
                 raise TypeError(
-                    f"cache_size must be an int or None, got {type(cache_size).__name__}"
+                    with_docs(
+                        "cache_size must be an int or None, got "
+                        f"{type(cache_size).__name__}",
+                        "generator-argument-type",
+                    )
                 )
             if cache_size <= 0:
-                raise ValueError(f"cache_size must be positive, got {cache_size}")
+                raise ValueError(
+                    with_docs(
+                        f"cache_size must be positive, got {cache_size}",
+                        "generator-cache-size-positive",
+                    )
+                )
 
         validate_count_mode(fp_type, count, count_transform)
         if fp_type not in SUPPORTED_FP_TYPES:
             raise ValueError(
-                f"Unsupported fp_type '{fp_type}'. "
-                f"Supported: {', '.join(SUPPORTED_FP_TYPES)}"
+                with_docs(
+                    f"Unsupported fp_type '{fp_type}'. "
+                    f"Supported: {', '.join(SUPPORTED_FP_TYPES)}",
+                    "generator-unsupported-fp-type",
+                )
             )
 
         effective: int = 0 if (compression is None or compression == 0) else compression
         method = resolve_method(method, count, effective)
         if method not in _ALL_METHODS:
             raise ValueError(
-                f"Unsupported method '{method}'. "
-                f"Supported: {', '.join(sorted(_ALL_METHODS))}"
+                with_docs(
+                    f"Unsupported method '{method}'. "
+                    f"Supported: {', '.join(sorted(_ALL_METHODS))}",
+                    "generator-method",
+                )
             )
         _validate_method_params(method, method_params)
 
         if effective != 0:
             if not _is_power_of_two(effective):
-                raise ValueError(f"compression must be a power of 2, got {effective}")
+                raise ValueError(
+                    with_docs(
+                        f"compression must be a power of 2, got {effective}",
+                        "generator-compression-power-of-two",
+                    )
+                )
             if effective > fp_size / 2:
                 raise ValueError(
-                    f"compression ({effective}) must be <= fp_size / 2 ({fp_size // 2})"
+                    with_docs(
+                        f"compression ({effective}) must be <= fp_size / 2 "
+                        f"({fp_size // 2})",
+                        "generator-compression-half",
+                    )
                 )
             if fp_size % effective != 0:
                 raise ValueError(
-                    f"fp_size ({fp_size}) must be evenly divisible by compression ({effective})"
+                    with_docs(
+                        f"fp_size ({fp_size}) must be evenly divisible by "
+                        f"compression ({effective})",
+                        "generator-compression-divisible",
+                    )
                 )
             _check_geometric_cap(method, effective)
 
         if method == "hadamard" and not _is_power_of_two(fp_size):
-            raise ValueError("Hadamard method requires fp_size to be a power of 2")
+            raise ValueError(
+                with_docs(
+                    "Hadamard method requires fp_size to be a power of 2",
+                    "generator-hadamard-fp-size",
+                )
+            )
 
         normalized_dtype = normalize_dtype(dtype)
         validate_count_dtype(normalized_dtype, count)
@@ -164,8 +214,11 @@ class EmbeddedFingerprintGenerator(_SmilesSelfiesMixin, RepresentationStateMixin
         if "matrix" in method_params:
             if effective == 0:
                 raise ValueError(
-                    "method_params['matrix'] requires active compression; "
-                    "compression is None or 0."
+                    with_docs(
+                        "method_params['matrix'] requires active compression; "
+                        "compression is None or 0.",
+                        "generator-method-params",
+                    )
                 )
             supplied_matrix, stored_method_params = extract_supplied_matrix(
                 method_params, fp_size, fp_size // effective,
@@ -221,24 +274,30 @@ class EmbeddedFingerprintGenerator(_SmilesSelfiesMixin, RepresentationStateMixin
         ``2**24``.
         """
         if mol is None:
-            raise ValueError("mol must not be None")
+            raise ValueError(with_docs("mol must not be None", "generator-mol-none"))
         raw = self._raw_fp(mol)
         if self._dtype.type is np.uint16 and not is_binary(raw):
             raise ValueError(
-                "dtype='uint16' requires binary values; count or transformed "
-                "representations cannot be stored as uint16."
+                with_docs(
+                    "dtype='uint16' requires binary values; count or transformed "
+                    "representations cannot be stored as uint16.",
+                    "generator-uint16-count",
+                )
             )
         return raw.astype(self._dtype)
 
     def GetFingerprintAsNumPy(self, mol: Chem.Mol) -> npt.NDArray[Any]:
         """Return the (optionally compressed) fingerprint for a single Mol."""
         if mol is None:
-            raise ValueError("mol must not be None")
+            raise ValueError(with_docs("mol must not be None", "generator-mol-none"))
         raw = self._raw_fp(mol)
         if self._dtype.type is np.uint16 and not is_binary(raw):
             raise ValueError(
-                "dtype='uint16' requires binary input (every value 0 or 1); "
-                "the exact integer code is undefined otherwise."
+                with_docs(
+                    "dtype='uint16' requires binary input (every value 0 or 1); "
+                    "the exact integer code is undefined otherwise.",
+                    "generator-uint16-count",
+                )
             )
         if self._compression == 0:
             # Binary bits and count values are lossless in the float dtypes
@@ -271,7 +330,12 @@ class EmbeddedFingerprintGenerator(_SmilesSelfiesMixin, RepresentationStateMixin
         """Batch fingerprints. Returns (embeddings, invalid_indices)."""
         if chunk_size is not None:
             if chunk_size <= 0:
-                raise ValueError("chunk_size must be a positive integer or None")
+                raise ValueError(
+                    with_docs(
+                        "chunk_size must be a positive integer or None",
+                        "generator-argument-value",
+                    )
+                )
             warnings.warn(
                 "chunk_size has no effect and will be removed in a future release",
                 DeprecationWarning,

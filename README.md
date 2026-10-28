@@ -2,6 +2,7 @@
 
 [![PyPI version](https://badge.fury.io/py/fpembed.svg)](https://badge.fury.io/py/fpembed)
 [![DOI](https://img.shields.io/badge/DOI-10.5281/zenodo.21447996-blue)](https://doi.org/10.5281/zenodo.21447996)
+[![Documentation](https://img.shields.io/badge/docs-fpembed-blue)](https://fpembed.readthedocs.io/en/latest/?utm_source=github&utm_medium=repository&utm_campaign=readme)
 
 ## Contents
 
@@ -26,7 +27,7 @@ support count mode, and keeps the fingerprint, compression method, and output dt
 returns a plain NumPy array, which fits a scikit-learn pipeline or any model that accepts a 2-D float
 matrix.
 
-The full technical reference is in [USER_MANUAL.md](USER_MANUAL.md).
+The full technical reference is in the [documentation](https://fpembed.readthedocs.io/en/latest/?utm_source=github&utm_medium=repository&utm_campaign=readme).
 
 ```mermaid
 graph LR
@@ -134,8 +135,6 @@ A JSON manifest describes every configuration.
 manifest = gen.representation_manifest()
 ```
 
-See the manual's [Quick Start](USER_MANUAL.md#quick-start) and [API Reference](USER_MANUAL.md#api-reference).
-
 ## Fingerprint Types at a Glance
 
 | Type | `fp_type` | Count mode | Native width |
@@ -160,8 +159,8 @@ Most types produce exactly `fp_size` values. PubChem and Laggner have a fixed na
 require a padded `fp_size` that is a power of two and at least the native width. ERG's native width
 depends on `max_path` and is padded the same way.
 
-The manual lists every type parameter, default, count rule, and fixed-width padding cost in
-[Fingerprint Types](USER_MANUAL.md#fingerprint-types).
+The [documentation](https://fpembed.readthedocs.io/en/latest/?utm_source=github&utm_medium=repository&utm_campaign=readme) lists every type parameter, default, count rule, and fixed-width padding cost
+on its Fingerprint Types page.
 
 ## Quickstart Notebook
 

@@ -27,6 +27,7 @@ where = ["src"]
 fpembed = ["py.typed"]
 
 [project.urls]
-"Homepage" = "https://github.com/Sciencealone/FPembed"
+Documentation = "https://fpembed.readthedocs.io/en/latest/?utm_source=pypi&utm_medium=project_page&utm_campaign=readme"
+Homepage = "https://github.com/Sciencealone/FPembed"
 "Commercial & Research Support" = "https://github.com/Sciencealone/FPembed/blob/main/COMMERCIAL_SUPPORT.md"
 "Issue Tracker" = "https://github.com/Sciencealone/FPembed/issues"

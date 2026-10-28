@@ -10,10 +10,8 @@ __pycache__/
 *.egg-info/
 dist/
 build/
-
-# Application artifacts
-cache.db
-test_cache*.csv
+docs/_build/
+docs/.doctrees/
 
 # OS
 .DS_Store

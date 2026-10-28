@@ -10,6 +10,7 @@ import numpy.typing as npt
 
 from fpembed.compression import _DEFAULT_SEED
 from fpembed.compression_projection import _rp_matrix_T, build_srht_signs
+from fpembed.docs_links import with_docs
 from fpembed.matrix_identity import matrix_id, validate_projection_matrix
 
 SUPPORTED_FP_TYPES = (
@@ -130,19 +131,33 @@ def validate_count_mode(fp_type: str, count: bool, count_transform: str) -> None
     """
     if not isinstance(count, bool):
         raise TypeError(
-            f"count must be a bool, got {type(count).__name__}"
+            with_docs(
+                f"count must be a bool, got {type(count).__name__}",
+                "generator-argument-type",
+            )
         )
     if count_transform not in _COUNT_TRANSFORMS:
         raise ValueError(
-            f"count_transform must be one of {_COUNT_TRANSFORMS}, "
-            f"got {count_transform!r}"
+            with_docs(
+                f"count_transform must be one of {_COUNT_TRANSFORMS}, "
+                f"got {count_transform!r}",
+                "generator-count-transform-value",
+            )
         )
     if count_transform != "none" and not count:
-        raise ValueError("count_transform requires count=True")
+        raise ValueError(
+            with_docs(
+                "count_transform requires count=True",
+                "generator-count-transform-requires-count",
+            )
+        )
     if count and fp_type not in _COUNT_SUPPORTED_SET:
         raise ValueError(
-            f"Count mode is not supported for fp_type '{fp_type}'. "
-            f"Supported count types: {', '.join(_COUNT_SUPPORTED_FP_TYPES)}"
+            with_docs(
+                f"Count mode is not supported for fp_type '{fp_type}'. "
+                f"Supported count types: {', '.join(_COUNT_SUPPORTED_FP_TYPES)}",
+                "generator-count-mode-not-supported",
+            )
         )
 
 
@@ -157,10 +172,13 @@ def resolve_method(method: str | None, count: bool, compression: int) -> str:
         return "uniform" if count and compression else "geometric"
     if count and compression and method in _COUNT_FORBIDDEN_METHODS:
         raise ValueError(
-            f"method '{method}' cannot be used with count fingerprints: "
-            f"count compression supports "
-            f"{', '.join(_COUNT_ALLOWED_METHODS)}. Geometric reversibility "
-            "and integer codes are binary-only."
+            with_docs(
+                f"method '{method}' cannot be used with count fingerprints: "
+                f"count compression supports "
+                f"{', '.join(_COUNT_ALLOWED_METHODS)}. Geometric reversibility "
+                "and integer codes are binary-only.",
+                "generator-method",
+            )
         )
     return method
 
@@ -169,9 +187,12 @@ def validate_count_dtype(dt: np.dtype, count: bool) -> None:
     """Reject ``uint16`` for count mode before any cast can wrap values."""
     if count and dt.type is np.uint16:
         raise ValueError(
-            "dtype='uint16' is not supported for count fingerprints: uint16 "
-            "cannot represent count values and would silently wrap. Use "
-            "float64 or float32."
+            with_docs(
+                "dtype='uint16' is not supported for count fingerprints: uint16 "
+                "cannot represent count values and would silently wrap. Use "
+                "float64 or float32.",
+                "generator-uint16-count",
+            )
         )
 
 
@@ -179,8 +200,11 @@ def reject_count_simulation(count: bool, fp_params: dict) -> None:
     """Reject ``count_simulation`` when count mode is active."""
     if count and "count_simulation" in fp_params:
         raise ValueError(
-            "fp_params['count_simulation'] is a binary-mode option and "
-            "cannot be combined with count=True."
+            with_docs(
+                "fp_params['count_simulation'] is a binary-mode option and "
+                "cannot be combined with count=True.",
+                "generator-count-simulation-binary",
+            )
         )
 
 
@@ -202,19 +226,28 @@ def resolve_native_layout(
     native_size = int(skfp_fp.n_features_out)
     if native_size > fp_size:
         raise ValueError(
-            f"fp_size ({fp_size}) is smaller than the backend native_size "
-            f"({native_size})."
+            with_docs(
+                f"fp_size ({fp_size}) is smaller than the backend native_size "
+                f"({native_size}).",
+                "generator-fp-size-native",
+            )
         )
     if fp_type in _FIXED_WIDTH_FP_TYPES:
         if not _is_power_of_two(fp_size):
             raise ValueError(
-                f"fp_size ({fp_size}) must be a power of two for fixed-width "
-                f"fp_type '{fp_type}' (native_size {native_size})."
+                with_docs(
+                    f"fp_size ({fp_size}) must be a power of two for fixed-width "
+                    f"fp_type '{fp_type}' (native_size {native_size}).",
+                    "generator-fp-size-power-of-two",
+                )
             )
     elif native_size != fp_size:
         raise ValueError(
-            f"Backend native_size ({native_size}) must equal fp_size "
-            f"({fp_size}) for variable-width fp_type '{fp_type}'."
+            with_docs(
+                f"Backend native_size ({native_size}) must equal fp_size "
+                f"({fp_size}) for variable-width fp_type '{fp_type}'.",
+                "generator-fp-size-native",
+            )
         )
     padding = "tail_zeros" if native_size < fp_size else "none"
     return native_size, padding

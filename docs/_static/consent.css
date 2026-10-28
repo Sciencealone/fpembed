@@ -1,4 +1,105 @@
 /*
-  Placeholder. The consent banner styles arrive in task 057-04.1.
-  This file defines no rule that hides page content.
+  Consent banner styles for FPembed documentation.
+  The banner is a bottom bar. It never hides page content, and the open state
+  reserves space at the end of the page so the support footer stays visible.
 */
+
+#fpembed-consent {
+  display: none;
+  position: fixed;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 10000;
+  box-sizing: border-box;
+  width: 100%;
+  margin: 0;
+  padding: 1rem 1.25rem;
+  border-top: 1px solid #d6d6d6;
+  background: #ffffff;
+  box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.15);
+  color: #1a1a1a;
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+#fpembed-consent:focus {
+  outline: none;
+}
+
+body.fpembed-consent-open {
+  padding-bottom: 11rem;
+}
+
+body.fpembed-consent-open #fpembed-consent {
+  display: block;
+}
+
+#fpembed-consent .fpembed-consent-inner {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+  justify-content: space-between;
+  max-width: 80rem;
+  margin: 0 auto;
+}
+
+#fpembed-consent p {
+  flex: 1 1 22rem;
+  margin: 0;
+}
+
+#fpembed-consent .fpembed-consent-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+/* Accept and Reject share one rule, so neither outranks the other. */
+#fpembed-consent button {
+  min-width: 7rem;
+  padding: 0.45rem 1rem;
+  border: 1px solid #1a1a1a;
+  border-radius: 4px;
+  background: #1a1a1a;
+  color: #ffffff;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+#fpembed-consent button:hover {
+  background: #333333;
+}
+
+#fpembed-consent button:focus-visible {
+  outline: 3px solid #1a73e8;
+  outline-offset: 2px;
+}
+
+#fpembed-consent a {
+  color: #0b5394;
+  font-weight: 600;
+  text-decoration: underline;
+}
+
+#fpembed-consent a:focus-visible {
+  outline: 3px solid #1a73e8;
+  outline-offset: 2px;
+}
+
+@media (max-width: 40rem) {
+  #fpembed-consent .fpembed-consent-inner {
+    display: block;
+  }
+
+  #fpembed-consent p {
+    margin-bottom: 0.75rem;
+  }
+
+  #fpembed-consent button {
+    flex: 1 1 8rem;
+  }
+}

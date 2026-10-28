@@ -39,6 +39,7 @@ from fpembed.compression_projection import (
     compress_hadamard,
     compress_random_projection,
 )
+from fpembed.docs_links import with_docs
 from fpembed.dtype_support import (
     cast_output,
     is_binary,
@@ -65,7 +66,6 @@ _VALID_PARAMS: dict[str, set[str]] = {
 }
 
 _DEFAULT_SEED = 42
-
 _GEOMETRIC_MAX_COMPRESSION = 32
 
 
@@ -81,10 +81,13 @@ def _check_geometric_cap(method: str, compression: int) -> None:
     """
     if method == "geometric" and compression > _GEOMETRIC_MAX_COMPRESSION:
         raise ValueError(
-            f"geometric compression ({compression}) exceeds the maximum "
-            f"of {_GEOMETRIC_MAX_COMPRESSION}: the block integer no longer "
-            f"fits the float64 mantissa, so its low bits are lost. Use a "
-            f"compression <= {_GEOMETRIC_MAX_COMPRESSION}, or a different method."
+            with_docs(
+                f"geometric compression ({compression}) exceeds the maximum "
+                f"of {_GEOMETRIC_MAX_COMPRESSION}: the block integer no longer "
+                f"fits the float64 mantissa, so its low bits are lost. Use a "
+                f"compression <= {_GEOMETRIC_MAX_COMPRESSION}, or a different method.",
+                "compression-geometric-max",
+            )
         )
 
 
@@ -94,33 +97,48 @@ def _validate_method_params(method: str, method_params: dict) -> None:
     unrecognized = set(method_params) - valid_keys
     if unrecognized:
         raise ValueError(
-            f"Unrecognized method_params keys {unrecognized} for method "
-            f"'{method}'. Valid keys: {valid_keys}"
+            with_docs(
+                f"Unrecognized method_params keys {unrecognized} for method "
+                f"'{method}'. Valid keys: {valid_keys}",
+                "compression-method-params",
+            )
         )
 
     if "seed" in method_params:
         seed = method_params["seed"]
         if not isinstance(seed, int) or isinstance(seed, bool) or seed < 0:
             raise ValueError(
-                f"seed must be a non-negative integer, got {seed!r}"
+                with_docs(
+                    f"seed must be a non-negative integer, got {seed!r}",
+                    "compression-method-params",
+                )
             )
 
     if "sparse" in method_params:
         sparse = method_params["sparse"]
         if not isinstance(sparse, bool):
             raise ValueError(
-                f"sparse must be a boolean, got {type(sparse).__name__}"
+                with_docs(
+                    f"sparse must be a boolean, got {type(sparse).__name__}",
+                    "compression-method-params",
+                )
             )
 
     if "interleave" in method_params:
         interleave = method_params["interleave"]
         if not isinstance(interleave, bool):
             raise ValueError(
-                f"interleave must be a boolean, got {type(interleave).__name__}"
+                with_docs(
+                    f"interleave must be a boolean, got {type(interleave).__name__}",
+                    "compression-method-params",
+                )
             )
         if interleave and method in _PROJECTION_METHODS:
             raise ValueError(
-                f"interleave is not applicable to method '{method}'"
+                with_docs(
+                    f"interleave is not applicable to method '{method}'",
+                    "compression-method-params",
+                )
             )
 
     if "matrix" in method_params:
@@ -210,18 +228,27 @@ def compress_fingerprint(
     """
     if isinstance(size, bool):
         raise ValueError(
-            f"Size must be a positive integer, not a boolean ({size!r}). "
-            "Try size = 16, or size = 32"
+            with_docs(
+                f"Size must be a positive integer, not a boolean ({size!r}). "
+                "Try size = 16, or size = 32",
+                "compression-argument-value",
+            )
         )
     if not isinstance(size, int) or size <= 0:
         raise ValueError(
-            "Size must be a positive integer. Try size = 16, or size = 32"
+            with_docs(
+                "Size must be a positive integer. Try size = 16, or size = 32",
+                "compression-argument-value",
+            )
         )
 
     if method not in _ALL_METHODS:
         raise ValueError(
-            f"Unsupported method '{method}'. "
-            f"Supported: {', '.join(sorted(_ALL_METHODS))}"
+            with_docs(
+                f"Unsupported method '{method}'. "
+                f"Supported: {', '.join(sorted(_ALL_METHODS))}",
+                "compression-method",
+            )
         )
 
     if method_params is None:
@@ -232,11 +259,17 @@ def compress_fingerprint(
     vector = np.asarray(vector)
     if vector.ndim not in (1, 2):
         raise ValueError(
-            f"Input must be 1-D (L,) or 2-D (N, L); got ndim {vector.ndim}."
+            with_docs(
+                f"Input must be 1-D (L,) or 2-D (N, L); got ndim {vector.ndim}.",
+                "compression-compression-input",
+            )
         )
     if vector.shape[-1] == 0:
         raise ValueError(
-            "Input feature axis (last axis) must be non-empty; got length 0."
+            with_docs(
+                "Input feature axis (last axis) must be non-empty; got length 0.",
+                "compression-compression-input",
+            )
         )
 
     validate_real_finite_input(vector)
@@ -244,8 +277,11 @@ def compress_fingerprint(
     fp_len = vector.shape[-1] if vector.ndim > 1 else vector.shape[0]
     if fp_len % size != 0:
         raise ValueError(
-            f"Input length ({fp_len}) is not evenly divisible by size "
-            f"({size}). Choose a size that divides the fingerprint length."
+            with_docs(
+                f"Input length ({fp_len}) is not evenly divisible by size "
+                f"({size}). Choose a size that divides the fingerprint length.",
+                "compression-compression-divisible",
+            )
         )
 
     _check_geometric_cap(method, size)
@@ -256,8 +292,11 @@ def compress_fingerprint(
     if dt.type is np.uint16:
         if not is_binary(vector):
             raise ValueError(
-                "dtype='uint16' requires binary input (every element 0 or 1); "
-                "the exact integer code is undefined for non-binary values."
+                with_docs(
+                    "dtype='uint16' requires binary input (every element 0 or 1); "
+                    "the exact integer code is undefined for non-binary values.",
+                    "compression-uint16-binary",
+                )
             )
         interleave = method_params.get("interleave", False)
         return compress_blockwise_exact_uint16(
@@ -289,8 +328,11 @@ def compress_fingerprint(
         if method == "hadamard":
             if not _is_power_of_two(fp_len) or not _is_power_of_two(output_dim):
                 raise ValueError(
-                    f"hadamard requires L ({fp_len}) and D = L // size "
-                    f"({output_dim}) to be powers of two."
+                    with_docs(
+                        f"hadamard requires L ({fp_len}) and D = L // size "
+                        f"({output_dim}) to be powers of two.",
+                        "compression-hadamard-dimensions",
+                    )
                 )
             if is_empty:
                 return cast_output(np.empty((0, output_dim), dtype=np.float64), dt)

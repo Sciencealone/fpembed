@@ -17,6 +17,8 @@ from typing import Any
 import numpy as np
 import numpy.typing as npt
 
+from fpembed.docs_links import with_docs
+
 _SUPPORTED_SCHEMES = ("geometric", "linear", "log", "uniform")
 
 
@@ -167,17 +169,28 @@ def compress_blockwise_exact_uint16(
     rows, cols = vector.shape
 
     if size < 1:
-        raise ValueError(f"Block size must be a positive integer, got {size}.")
+        raise ValueError(
+            with_docs(
+                f"Block size must be a positive integer, got {size}.",
+                "compression-argument-value",
+            )
+        )
     if cols % size != 0:
         raise ValueError(
-            f"Feature axis ({cols}) is not evenly divisible by block size "
-            f"({size})."
+            with_docs(
+                f"Feature axis ({cols}) is not evenly divisible by block size "
+                f"({size}).",
+                "compression-compression-divisible",
+            )
         )
     if scheme == "geometric" and size > 32:
         raise ValueError(
-            f"geometric block size ({size}) exceeds the maximum of 32: the "
-            f"block weights span 2**-size, past the float64 mantissa. Use "
-            f"size <= 32."
+            with_docs(
+                f"geometric block size ({size}) exceeds the maximum of 32: the "
+                f"block weights span 2**-size, past the float64 mantissa. Use "
+                f"size <= 32.",
+                "compression-geometric-max",
+            )
         )
 
     n_blocks = cols // size
