@@ -183,15 +183,11 @@ This project is licensed under the terms of the MIT open source license. See [LI
 
 ## Legal & Trademark Notice
 
-The name "FPembed", its branding, and identifiers are the intellectual property of the project
-author (@Sciencealone).
+The FPembed source code is licensed under MIT. That licence covers the code and does not include any right to use the FPembed name or logo.
 
-- **Commercial Branding:** The unauthorized use of the name "FPembed" to brand, market, or promote
-  commercial software, corporate AI engines, or proprietary services within the fields of
-  bioinformatics, chemoinformatics, and AI drug discovery is strictly prohibited.
-- **Community Protection:** This notice prevents public confusion and protects the open-source
-  community from misleading corporate misrepresentations. For licensing queries regarding the
-  project name, open an issue or contact the author directly.
+"FPembed" is a trademark of the project author Mikhail Markovskii (@Sciencealone). A trademark application for the name has been filed.
+
+Accurate references to FPembed are permitted: citing the project, stating that a tool uses or is compatible with FPembed, and redistributing an unmodified copy under its name. Uses that suggest the project endorses, sponsors, or operates a product or service need prior written permission from the trademark owner. Permission requests go to contact@fpembed.com.
 
 ## Commercial & Research Services
 

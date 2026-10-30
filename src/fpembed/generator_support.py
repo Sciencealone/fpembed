@@ -300,6 +300,7 @@ def extract_supplied_matrix(
     stored["matrix_shape"] = list(canonical.shape)
     return canonical, stored
 
+
 def prepare_projection_artifacts(
     effective: int,
     method: str,

@@ -198,7 +198,6 @@ def build_precomputed_manifest(compressor: Any) -> dict:
     if compressor._center_id is not None:
         fingerprint_params["center_id"] = compressor._center_id
 
-
     return {
         "schema_version": _SCHEMA_VERSION,
         "fingerprint": {
