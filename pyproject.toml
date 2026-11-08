@@ -17,6 +17,9 @@ readme = "README.md"
 license = "MIT"
 license-files = ["LICENSE*"]
 
+[project.scripts]
+fpembed = "fpembed.cli:main"
+
 [tool.setuptools.dynamic]
 version = {attr = "fpembed.__version__"}
 

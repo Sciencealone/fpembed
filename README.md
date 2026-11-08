@@ -10,6 +10,7 @@
 - [Why Embedded Fingerprints](#why-embedded-fingerprints)
 - [Install](#install)
 - [Quick Start](#quick-start)
+- [Agent Skill](#agent-skill)
 - [Fingerprint Types at a Glance](#fingerprint-types-at-a-glance)
 - [Quickstart Notebook](#quickstart-notebook)
 - [Original Concept (eMFP)](#original-concept-emfp)
@@ -134,6 +135,37 @@ A JSON manifest describes every configuration.
 ```python
 manifest = gen.representation_manifest()
 ```
+
+The documentation covers the Quick Start and the API Reference.
+
+## Agent Skill
+
+FPembed ships an agent skill at `.agents/skills/fpembed/` with `SKILL.md`, four scripts, reference documents, and a demo fixture. The skill is named `fpembed` as its machine identifier and uses FPembed as the display name. Agents load it when predicting a molecular property or QSAR from SMILES, SELFIES, or RDKit Mols, when a dataset is large enough that full-length fingerprints are too slow or memory-heavy to model directly, or when compressing external embeddings and exploring chemical space.
+
+The four scripts cover the main workflows:
+
+- `featurize.py` turns SMILES, SELFIES, or RDKit Mols into dense embeddings, batch or streaming, with an invalid-row audit.
+- `compress.py` compresses an external embedding matrix or a raw fingerprint array.
+- `qsar_engine.py` fits and predicts regression or classification models with scikit-learn.
+- `diversity.py` picks max-min exemplars, scores outliers, or queries nearest neighbors.
+
+Input can be SMILES or SELFIES from a CSV or `.smi` file, or RDKit Mols from a `.sdf` or `.mol` file. The `.sdf` and `.mol` suffixes imply Mol input.
+
+Two dependency tiers apply. Tier 1 needs FPembed and NumPy and covers featurization, compression, and diversity. Tier 2 adds scikit-learn and covers QSAR. Every script offers `--doctor` to report the installed FPembed version, the minimum of 0.3.0, and the available tier.
+
+| Platform | Auto-discovered skills directory |
+|---|---|
+| OpenCode | `.opencode/skills/` and `.agents/skills/` |
+| Claude Code | `.claude/skills/` |
+| Cursor | `.agents/skills/` and `.cursor/skills/` |
+| GitHub Copilot | `.github/skills/`, `.claude/skills/`, and `.agents/skills/` |
+| Antigravity | `.agents/skills/` |
+| Codex CLI | `.agents/skills/` |
+| Gemini CLI | `.gemini/skills/` and `.agents/skills/` |
+
+Install the skill with `npx skills add Sciencealone/fpembed --skill fpembed`, or use `gh skill install Sciencealone/fpembed fpembed --agent <agent> --scope user --allow-hidden-dirs` or `gemini skills install https://github.com/Sciencealone/fpembed --scope workspace` as alternatives. If you already have a repository clone, copy `.agents/skills/fpembed/` into a discovered skills directory as a fallback. `pip install fpembed` installs the library only, not the skill.
+
+The [agent documentation](https://fpembed.readthedocs.io/en/latest/agent?utm_source=github&utm_medium=repository&utm_campaign=readme) covers the commands, input formats, discovery paths, and link attribution.
 
 ## Fingerprint Types at a Glance
 

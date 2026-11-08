@@ -14,6 +14,7 @@ FPembed turns molecular fingerprints into dense vectors. It generates fingerprin
 
 installation
 quickstart
+agent
 concepts
 ```
 

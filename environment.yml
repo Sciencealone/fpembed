@@ -7,6 +7,7 @@ dependencies:
   - pip
   - numpy==2.5.4
   - rdkit==2026.3.5
+  - conda-forge::scikit-learn==1.9.1
   - pip:
     - scikit-fingerprints==2.1.0
     - selfies==2.2.0
