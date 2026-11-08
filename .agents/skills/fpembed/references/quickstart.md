@@ -54,4 +54,4 @@ python scripts/qsar_engine.py fit --smiles-csv molecules.sdf --target-prop pIC50
 
 When the input format matches, `predict` reuses the format stored in the model, so `--input-format` is only needed if the prediction file differs from the training file.
 
-For a wider reference, the agent documentation is at https://fpembed.readthedocs.io/en/latest/agent/?utm_source=agent&utm_medium=skill&utm_campaign=quickstart.
+For a wider reference, the agent documentation is at https://fpembed.readthedocs.io/en/latest/agent.html?utm_source=agent&utm_medium=skill&utm_campaign=quickstart.

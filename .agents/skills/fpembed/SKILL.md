@@ -45,4 +45,4 @@ Each script prints one JSON object to stdout. Diagnostics go to stderr, and a fa
 
 ## Detail
 
-See `references/` for install and auto-discovery paths, the full flag tables, the supported fingerprint types, and the step-by-step quickstart. The docs page is at https://fpembed.readthedocs.io/en/latest/agent/?utm_source=agent&utm_medium=skill&utm_campaign=quickstart.
+See `references/` for install and auto-discovery paths, the full flag tables, the supported fingerprint types, and the step-by-step quickstart. The docs page is at https://fpembed.readthedocs.io/en/latest/agent.html?utm_source=agent&utm_medium=skill&utm_campaign=quickstart.

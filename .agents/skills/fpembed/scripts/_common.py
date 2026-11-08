@@ -16,7 +16,7 @@ import sys
 from pathlib import Path
 from typing import Any
 
-DOCS_BASE = "https://fpembed.readthedocs.io/en/latest/agent/"
+DOCS_BASE = "https://fpembed.readthedocs.io/en/latest/agent.html"
 UTM_AGENT = "utm_source=agent&utm_medium=skill"
 MIN_VERSION = "0.3.0"
 CAMPAIGNS = ("quickstart", "doctor", "featurize", "compress", "qsar", "diversity")

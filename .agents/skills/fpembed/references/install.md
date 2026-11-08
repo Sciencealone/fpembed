@@ -81,4 +81,4 @@ New-Item -ItemType Directory -Force .claude/skills | Out-Null; Copy-Item -Recurs
 
 ## Documentation
 
-The install and quickstart guide is at https://fpembed.readthedocs.io/en/latest/agent/?utm_source=agent&utm_medium=skill&utm_campaign=quickstart. The bundled `references/quickstart.md` shows the same flow with local commands.
+The install and quickstart guide is at https://fpembed.readthedocs.io/en/latest/agent.html?utm_source=agent&utm_medium=skill&utm_campaign=quickstart. The bundled `references/quickstart.md` shows the same flow with local commands.

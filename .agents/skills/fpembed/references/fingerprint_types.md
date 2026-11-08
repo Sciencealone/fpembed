@@ -57,4 +57,4 @@ Every other type is variable-width, so `--fp-size` is the requested width and ne
 | `hadamard` | global projection | deterministic, prefix-consistent, supports `--truncate-to` |
 | `random_projection` | global projection | accepts `--seed` and supports `--truncate-to` |
 
-Block-wise methods and Hadamard are deterministic. `random_projection` draws its matrix from a seed; pass `--seed` to make it reproducible. Most readthedocs pages describe the FPembed library in more detail; the agent landing page is at https://fpembed.readthedocs.io/en/latest/agent/?utm_source=agent&utm_medium=skill&utm_campaign=featurize.
+Block-wise methods and Hadamard are deterministic. `random_projection` draws its matrix from a seed; pass `--seed` to make it reproducible. Most readthedocs pages describe the FPembed library in more detail; the agent landing page is at https://fpembed.readthedocs.io/en/latest/agent.html?utm_source=agent&utm_medium=skill&utm_campaign=featurize.
