@@ -22,34 +22,34 @@
 
 ## Introduction
 
-FPembed turns standard molecular fingerprints into compact, dense vectors for machine learning. It
-accepts SMILES, SELFIES, and RDKit Mol input, supports fifteen fingerprint types, nine of which also
-support count mode, and keeps the fingerprint, compression method, and output dtype explicit. It
-returns a plain NumPy array, which fits a scikit-learn pipeline or any model that accepts a 2-D float
-matrix.
+Molecular fingerprints are wide and mostly zeros, and a model pays for every column. FPembed
+compresses a standard fingerprint into a short dense vector with a fixed, data-independent map,
+so a QSAR pipeline keeps its fingerprint definition explicit while the model reads a fraction of
+the inputs. It returns a plain NumPy array, which fits scikit-learn or any model that takes a 2-D
+float matrix.
 
+Input is SMILES, SELFIES, or RDKit Mol. Fifteen fingerprint types are available, nine of them also
+in count mode, and embeddings produced by another model can be compressed with the same methods.
 The full technical reference is in the [documentation](https://fpembed.readthedocs.io/en/latest/?utm_source=github&utm_medium=repository&utm_campaign=readme).
 
 ```mermaid
 graph LR
-    A[SMILES / SELFIES / Mol] --> B[EmbeddedFingerprintGenerator] --> C[Binary or count vector]
-    C --> D[Compression] --> E[float64 / float32 / uint16 embedding]
-    F[External embeddings] --> G[PrecomputedEmbeddingCompressor] --> D
+    A[SMILES / SELFIES / Mol] --> B[Fingerprint generation] --> C[Binary or count vector]
+    C --> D[Compression, fixed map] --> E[float64 / float32 / uint16, L / C values]
+    F[Embeddings from another model] --> D
 ```
 
 ## Why Embedded Fingerprints
 
-Compression reduces a fingerprint of length L to an embedding of length D = L / C, where C is the
-compression factor. At C=16, a 2048-bit fingerprint becomes 128 features, so downstream models see
-about 16 times fewer inputs.
+A 2048-bit fingerprint hands a model 2048 input columns, and most of them are zero. Compression
+leaves the fingerprint at full width and shortens what the model reads: at a factor of 16, those
+2048 bits become 128 dense values. The saving in columns and stored bytes is exact; the effect on
+training time, memory, and sample efficiency depends on the model and the data.
 
-The guaranteed saving is the feature count and the stored byte count. Training speed, inference
-speed, memory use, and sample efficiency often improve as a result. The size of that effect depends
-on the model, hardware, and dataset.
-
-FPembed makes the choice of fingerprint and compression method explicit. It offers six methods: four
-block-wise schemes and two global projections. The default is `geometric` for binary input and
-`uniform` for count input.
+Formally, a fingerprint of length L becomes an embedding of length D = L / C, with C the
+compression factor. FPembed makes the choice of fingerprint and compression method explicit. It
+offers six methods: four block-wise schemes and two global projections. The default is `geometric`
+for binary input and `uniform` for count input.
 
 Three entry points cover the common paths: `EmbeddedFingerprintGenerator` for molecules,
 `PrecomputedEmbeddingCompressor` for embeddings from another model, and `compress_fingerprint()` for
@@ -165,7 +165,7 @@ Two dependency tiers apply. Tier 1 needs FPembed and NumPy and covers featurizat
 
 Install the skill with `npx skills add Sciencealone/fpembed --skill fpembed`, or use `gh skill install Sciencealone/fpembed fpembed --agent <agent> --scope user --allow-hidden-dirs` or `gemini skills install https://github.com/Sciencealone/fpembed --scope workspace` as alternatives. If you already have a repository clone, copy `.agents/skills/fpembed/` into a discovered skills directory as a fallback. `pip install fpembed` installs the library only, not the skill.
 
-The [agent documentation](https://fpembed.readthedocs.io/en/latest/agent?utm_source=github&utm_medium=repository&utm_campaign=readme) covers the commands, input formats, discovery paths, and link attribution.
+The [agent documentation](https://fpembed.readthedocs.io/en/latest/agent.html?utm_source=github&utm_medium=repository&utm_campaign=readme) covers the commands, input formats, discovery paths, and link attribution.
 
 ## Fingerprint Types at a Glance
 
