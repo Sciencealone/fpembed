@@ -1,6 +1,6 @@
 # Why Embedded Fingerprints
 
-An embedding replaces a wide fingerprint with a shorter dense vector, which cuts feature columns, stored bytes, and the work in the first model layer. Read this page when you weigh a smaller `fp_size` against a compression factor, or when you need the memory and speed numbers behind either choice.
+Most of a molecular fingerprint is zeros, and a model pays for every column at every step. An embedding keeps the fingerprint and shortens what the model reads, a dense vector of `D = L / C` values. Read this page when you weigh a smaller `fp_size` against a compression factor, or when you need the memory and speed numbers behind either choice.
 
 A fingerprint encodes a molecule as a vector of fixed length. A 2048-bit ECFP hashes each substructure into a position and leaves the rest at zero, so few of the 2048 values are nonzero. Training and inference pay for the full width: a tree scans a threshold per position, a dense layer holds a weight per position, and a distance adds a term per position.
 

@@ -1,6 +1,6 @@
 # FPembed documentation
 
-FPembed turns molecular fingerprints into dense vectors. It generates fingerprints, compresses them, validates input, tracks identity, and caches results, then returns plain NumPy arrays. Use it when you need a standard fingerprint in a smaller, model-ready form and the fingerprint definition has to stay explicit. The table below names the three entry points and the input each one accepts; the toctrees below it lead to the rest of the manual.
+FPembed compresses molecular fingerprints into short dense vectors for machine learning. A fingerprint is wide and mostly zeros, and a model pays for every column, so the map shortens what the model reads while the fingerprint definition stays explicit and the configuration is recorded for later reproduction. Nothing is fitted or trained. Input is SMILES, SELFIES, or RDKit Mol, or embeddings from another model, and the output is a plain NumPy array. The table below names the three entry points and the input each one accepts; the toctrees below it lead to the rest of the manual.
 
 | Entry point | Input | Use when |
 |---|---|---|
