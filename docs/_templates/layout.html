@@ -9,6 +9,15 @@
 {% block extrahead %}
 {{ super() }}
 <meta name="fpembed-posthog-key" content="{{ posthog_key|default('') }}">
+{%- set descriptions = page_descriptions|default({}, true) %}
+{%- set description = descriptions.get(pagename, 'FPembed documentation: reference for generalized molecular fingerprint embeddings.') %}
+<meta name="description" content="{{ description|e }}">
+<meta property="og:title" content="{{ title|default(docstitle, true)|striptags|e }}">
+<meta property="og:description" content="{{ description|e }}">
+<meta property="og:url" content="{{ docs_base_url|default('https://fpembed.readthedocs.io/en/latest/', true) }}{{ pagename }}.html">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="FPembed">
+<meta name="twitter:card" content="summary">
 {% endblock %}
 
 {% block document %}
