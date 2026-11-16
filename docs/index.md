@@ -1,3 +1,6 @@
+html_meta:
+  "google-site-verification": "9g_l2bU0_i6apPdF4zacoOuPFBsSfM19HhgYflTACG4"
+
 # FPembed documentation
 
 FPembed compresses molecular fingerprints into short dense vectors for machine learning. A fingerprint is wide and mostly zeros, and a model pays for every column, so the map shortens what the model reads while the fingerprint definition stays explicit and the configuration is recorded for later reproduction. Nothing is fitted or trained. Input is SMILES, SELFIES, or RDKit Mol, or embeddings from another model, and the output is a plain NumPy array. The table below names the three entry points and the input each one accepts; the toctrees below it lead to the rest of the manual.
