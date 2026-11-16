@@ -111,3 +111,5 @@ Explores an embedding matrix with pure NumPy distance math. There is no random p
 | `--query` | required for neighbors | `.npy` or numeric `.csv` query matrix |
 | `--output` | none (stdout JSON) | optional CSV output path |
 | `--doctor` | off | run the self-check and exit |
+
+For a wider reference, the agent documentation is at https://fpembed.readthedocs.io/en/latest/agent.html?utm_source=agent&utm_medium=skill&utm_campaign=featurize.

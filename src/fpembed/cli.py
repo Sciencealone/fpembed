@@ -133,6 +133,8 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
         prog="fpembed",
         description="FPembed command-line tools.",
+        epilog="Documentation: https://fpembed.readthedocs.io/en/latest/?utm_source=fpembed&utm_medium=cli&utm_campaign=help",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     subparsers = parser.add_subparsers(dest="command", required=True)
     subparsers.add_parser(
